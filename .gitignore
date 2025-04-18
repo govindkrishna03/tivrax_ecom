@@ -1,0 +1,32 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment variables
+.env
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# IDEs/editors
+.vscode/
+.idea/
+
+# OS specific
+*.swp
+
+# Next.js specific (if using it)
+.next/
+
+# Dependencies cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
