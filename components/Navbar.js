@@ -28,7 +28,7 @@ export default function Navbar() {
         />
       </Link>
       {/* Shopping Cart */}
-      <Link href="/shoppingcart">
+      <Link href="/shopping_cart">
         <Image
           src="/icons/cart.png"
           alt="shopping_cart"
