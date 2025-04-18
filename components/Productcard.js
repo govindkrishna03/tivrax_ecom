@@ -33,6 +33,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
             </div>
         </div>
     );
+    
 };
 
 export default ProductCard;
