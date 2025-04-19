@@ -49,7 +49,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
 
   return (
     <div
-      className="w-full max-w-sm h-[400px] mb-10 bg-white rounded-lg shadow-lg hover:scale-105 hover:shadow-2xl transition-transform transform flex flex-col justify-between relative overflow-hidden"
+      className="w-full max-w-sm sm:h-[400px] mb-10 bg-white rounded-lg shadow-lg hover:scale-105 hover:shadow-2xl transition-transform transform flex flex-col justify-between relative overflow-hidden"
       onClick={handleProductClick}
     >
       {/* Product Image */}
@@ -63,13 +63,14 @@ const ProductCard = ({ id, name, rate, size, image }) => {
 
       {/* Product Details */}
       <div className="px-5 pb-5 flex flex-col items-center justify-center z-10">
-        <h3 className="text-xl font-semibold text-black text-center cursor-pointer hover:underline">
+        <h3 className="text-sm sm:text-xl font-semibold text-black text-center cursor-pointer hover:underline">
           {name}
         </h3>
         <span className="text-sm text-gray-600 mb-1">Size: {size}</span>
-        <span className="text-3xl font-bold text-black p-2 mb-3">
-          ₹{rate}
-        </span>
+        <span className="text-xl sm:text-3xl font-bold text-black mb-2">
+  ₹{rate}
+</span>
+
 
         {/* Add to Cart Button */}
         <button
@@ -77,7 +78,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
             e.stopPropagation();  // Prevent triggering the product click event
             handleAddToCart();
           }}
-          className="w-[50%] text-white bg-black transform hover:scale-110 transition-all duration-300 font-medium rounded-4xl text-sm px-5 py-2.5 mt-3 shadow-md hover:shadow-lg"
+          className="sm:w-[50%] text-white bg-black transform hover:scale-110 transition-all duration-300 font-medium rounded-4xl text-sm px-5 py-2.5 mt-3 shadow-md hover:shadow-lg"
         >
           Add to cart
         </button>
