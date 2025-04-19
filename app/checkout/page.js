@@ -1,16 +1,18 @@
 'use client';
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const CheckoutPage = () => {
   const searchParams = useSearchParams();
-  const name = searchParams.get("name");
-  const price = searchParams.get("price");
-  const size = searchParams.get("size");
-  const img = searchParams.get("img");
-  const productId = searchParams.get("productId");
-  const productLink = searchParams.get("productLink");
+  const [productData, setProductData] = useState({
+    name: "",
+    price: "",
+    size: "",
+    img: "",
+    productId: "",
+    productLink: ""
+  });
 
   const [userDetails, setUserDetails] = useState({
     name: "",
@@ -18,12 +20,25 @@ const CheckoutPage = () => {
     address: "",
     pincode: "",
   });
+
   const [errors, setErrors] = useState({
     name: "",
     phone: "",
     address: "",
     pincode: "",
   });
+
+  useEffect(() => {
+    // To avoid hydration mismatch, we set values in client-side useEffect
+    setProductData({
+      name: searchParams.get("name") || "",
+      price: searchParams.get("price") || "",
+      size: searchParams.get("size") || "",
+      img: searchParams.get("img") || "",
+      productId: searchParams.get("productId") || "",
+      productLink: searchParams.get("productLink") || "",
+    });
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setUserDetails((prev) => ({
@@ -41,15 +56,13 @@ const CheckoutPage = () => {
       pincode: "",
     };
 
-    // Name validation
-    if (!userDetails.name) {
+    if (!userDetails.name.trim()) {
       newErrors.name = "Name is required.";
       isValid = false;
     }
 
-    // Phone validation (should be 10 digits)
     const phoneRegex = /^[0-9]{10}$/;
-    if (!userDetails.phone) {
+    if (!userDetails.phone.trim()) {
       newErrors.phone = "Phone number is required.";
       isValid = false;
     } else if (!phoneRegex.test(userDetails.phone)) {
@@ -57,15 +70,13 @@ const CheckoutPage = () => {
       isValid = false;
     }
 
-    // Address validation
-    if (!userDetails.address) {
+    if (!userDetails.address.trim()) {
       newErrors.address = "Address is required.";
       isValid = false;
     }
 
-    // Pincode validation (should be 6 digits)
     const pincodeRegex = /^[0-9]{6}$/;
-    if (!userDetails.pincode) {
+    if (!userDetails.pincode.trim()) {
       newErrors.pincode = "Pincode is required.";
       isValid = false;
     } else if (!pincodeRegex.test(userDetails.pincode)) {
@@ -78,12 +89,10 @@ const CheckoutPage = () => {
   };
 
   const handlePlaceOrder = () => {
+    const { name, price, size, img, productId, productLink } = productData;
     const { name: userName, phone, address, pincode } = userDetails;
 
-    // Validate the form before submitting
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     const message = `Hello! I would like to place an order:
 *Product ID*: ${productId}
@@ -97,28 +106,25 @@ const CheckoutPage = () => {
 *Product Link*: ${productLink}`;
 
     const businessPhoneNumber = "6238917427";
-    const whatsappURL = `https://wa.me/91${businessPhoneNumber}?text=${encodeURIComponent(message)}`;
+    const encodedMessage = encodeURIComponent(message);
 
-    // Check if the device is mobile or desktop
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const whatsappURL = isMobile
+      ? `https://wa.me/91${businessPhoneNumber}?text=${encodedMessage}`
+      : `https://web.whatsapp.com/send?phone=91${businessPhoneNumber}&text=${encodedMessage}`;
 
-    if (isMobile) {
-      // Open WhatsApp app for mobile devices
-      window.open(whatsappURL, "_blank");
-    } else {
-      // Open WhatsApp Web for desktop devices
-      window.open(`https://web.whatsapp.com/send?phone=91${businessPhoneNumber}&text=${encodeURIComponent(message)}`, "_blank");
-    }
+    window.open(whatsappURL, "_blank");
   };
+
+  const { name, price, size, img } = productData;
 
   return (
     <div className="container mx-auto px-6 py-12">
       <div className="bg-white shadow-lg rounded-xl p-8 max-w-xl mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-gray-800">Checkout</h1>
 
-        {/* Product Summary */}
         <div className="flex flex-col sm:flex-row gap-6 items-center mb-8">
-          <img src={img} alt={name} className="w-28 h-28 object-cover rounded-lg mb-4 sm:mb-0" />
+          <img src={img} alt={name} className="w-28 h-28 object-cover rounded-lg" />
           <div>
             <h2 className="text-lg font-semibold">{name}</h2>
             <p className="text-gray-600">Size: {size}</p>
@@ -126,7 +132,6 @@ const CheckoutPage = () => {
           </div>
         </div>
 
-        {/* User Details Form */}
         <div className="space-y-4">
           <div>
             <input
@@ -139,7 +144,7 @@ const CheckoutPage = () => {
             />
             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
-          
+
           <div>
             <input
               type="tel"
@@ -188,4 +193,4 @@ const CheckoutPage = () => {
   );
 };
 
-export default CheckoutPage; // Ensure this is the default export
+export default CheckoutPage;
