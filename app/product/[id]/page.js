@@ -1,46 +1,31 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";  // Use useRouter instead of useParams
+import { useParams } from "next/navigation";
 
 const ProductDescriptionPage = () => {
-  const { query } = useRouter();  // Use query parameter from useRouter
-  const id = query.id;  // Get product ID from the URL
+  const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [pincode, setPincode] = useState("");
   const [deliveryAvailable, setDeliveryAvailable] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
-  const [loading, setLoading] = useState(true);  // Add loading state
 
   useEffect(() => {
-    if (id) {
-      const fetchProductData = async () => {
-        try {
-          const response = await fetch(`/api/product`);
-          const data = await response.json();
-          
-          // Find the product based on the URL id
-          const product = data.find((p) => p.P_ID.toString() === id);
-          setProduct(product);
-        } catch (error) {
-          console.error("Error fetching product data", error);
-        } finally {
-          setLoading(false);  // Set loading to false once data is fetched
-        }
-      };
+    const fetchProductData = async () => {
+      const response = await fetch(`/api/product`);
+      const data = await response.json();
 
-      fetchProductData();
-    }
+      const product = data.find((p) => p.P_ID.toString() === id);
+      setProduct(product);
+    };
+
+    fetchProductData();
   }, [id]);
 
   const handlePincodeCheck = () => {
     const availablePincodes = ["110001", "110002", "110003", "110004"];
     setDeliveryAvailable(availablePincodes.includes(pincode));
   };
-
-  if (loading) {
-    return <p className="text-center text-lg text-gray-600 mt-12">Loading...</p>;  // Show loading message
-  }
 
   if (!product) {
     return <p className="text-center text-lg text-gray-600 mt-12">Product not found</p>;
