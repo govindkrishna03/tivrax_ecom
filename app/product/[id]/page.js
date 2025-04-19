@@ -1,93 +1,135 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";  // Use useRouter instead of useParams
 
 const ProductDescriptionPage = () => {
-  const { id } = useParams();
+  const { query } = useRouter();  // Use query parameter from useRouter
+  const id = query.id;  // Get product ID from the URL
   const [product, setProduct] = useState(null);
   const [pincode, setPincode] = useState("");
   const [deliveryAvailable, setDeliveryAvailable] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [loading, setLoading] = useState(true);  // Add loading state
 
   useEffect(() => {
-    const fetchProductData = async () => {
-      const response = await fetch(`/api/product`);
-      const data = await response.json();
+    if (id) {
+      const fetchProductData = async () => {
+        try {
+          const response = await fetch(`/api/product`);
+          const data = await response.json();
+          
+          // Find the product based on the URL id
+          const product = data.find((p) => p.P_ID.toString() === id);
+          setProduct(product);
+        } catch (error) {
+          console.error("Error fetching product data", error);
+        } finally {
+          setLoading(false);  // Set loading to false once data is fetched
+        }
+      };
 
-      console.log(data);  
-
-      const product = data.find((p) => p.P_ID.toString() === id);
-      setProduct(product);
-    };
-
-    fetchProductData();
+      fetchProductData();
+    }
   }, [id]);
 
   const handlePincodeCheck = () => {
-    // List of example pincodes for demonstration
     const availablePincodes = ["110001", "110002", "110003", "110004"];
-    
-    if (availablePincodes.includes(pincode)) {
-      setDeliveryAvailable(true);
-    } else {
-      setDeliveryAvailable(false);
-    }
+    setDeliveryAvailable(availablePincodes.includes(pincode));
   };
 
+  if (loading) {
+    return <p className="text-center text-lg text-gray-600 mt-12">Loading...</p>;  // Show loading message
+  }
+
   if (!product) {
-    return <p className="text-center text-lg text-gray-600">Product not found</p>;
+    return <p className="text-center text-lg text-gray-600 mt-12">Product not found</p>;
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6">
-      <div className="flex flex-col md:flex-row bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="container mx-auto px-6 py-12">
+      <div className="flex flex-col lg:flex-row bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-200">
         {/* Product Image */}
-        <div className="flex-shrink-0 w-full md:w-1/2 p-6">
+        <div className="lg:w-1/2 w-full p-8 bg-gray-50 flex items-center justify-center">
           <img
             src={product.P_Image}
             alt={product.P_Name}
-            className="object-contain w-full h-full rounded-md shadow-md"
+            className="object-contain h-[400px] w-full rounded-lg"
           />
         </div>
 
         {/* Product Details */}
-        <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
-          {/* Product Name */}
-          <h1 className="text-3xl font-semibold text-gray-800 mb-2">{product.P_Name}</h1>
-          <p className="text-lg text-gray-600 mt-1">Size: {product.Size}</p>
+        <div className="lg:w-1/2 w-full p-8 flex flex-col justify-between">
+          {/* Name */}
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900">{product.P_Name}</h1>
+            <p className="text-gray-500 text-lg mt-2">{product.Category}</p>
 
-          {/* Price */}
-          <p className="text-4xl font-bold text-black mt-2">₹{product.Rate}</p>
+            {/* Size Selector */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-2 text-gray-700">Select Size</h3>
+              <div className="flex gap-4 flex-wrap">
+                {(Array.isArray(product.Size) ? product.Size : product.Size?.split(','))?.map((size, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedSize(size)}
+                    className={`w-12 h-12 rounded-full border-2 flex items-center justify-center
+                      font-medium transition-all duration-200
+                      ${selectedSize === size
+                        ? "bg-black text-white border-black"
+                        : "bg-white text-black border-gray-300 hover:border-black"}`}
+                  >
+                    {size.trim()}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          {/* Product Description */}
-          <p className="text-base text-gray-700 mt-4">{product.Description}</p>
+            {/* Price */}
+            <div className="mt-6">
+              <p className="text-3xl font-bold text-gray-800">₹{product.Rate}</p>
+            </div>
 
-          {/* Pincode Check */}
-          <div className="mt-6">
-            <input
-              type="text"
-              value={pincode}
-              onChange={(e) => setPincode(e.target.value)}
-              placeholder="Enter your pincode"
-              className="border border-gray-300 rounded-lg p-3 w-full mt-2"
-            />
-            <button
-              onClick={handlePincodeCheck}
-              className="mt-2 bg-black text-white px-6 py-2 rounded-lg w-full"
-            >
-              Check Delivery
-            </button>
-            {deliveryAvailable !== null && (
-              <p className={`mt-2 text-lg ${deliveryAvailable ? "text-green-500" : "text-red-500"}`}>
-                {deliveryAvailable ? "Delivery is available in your area!" : "Sorry, we don't deliver to this pincode."}
-              </p>
-            )}
+            {/* Description */}
+            <div className="mt-6">
+              <h4 className="text-md font-semibold mb-1 text-gray-700">Product Description</h4>
+              <p className="text-gray-600 leading-relaxed">{product.Description}</p>
+            </div>
+
+            {/* Pincode Checker */}
+            <div className="mt-8">
+              <h4 className="text-md font-semibold mb-2 text-gray-700">Check Delivery</h4>
+              <div className="flex gap-3 flex-col sm:flex-row">
+                <input
+                  type="text"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value)}
+                  placeholder="Enter your pincode"
+                  className="border border-gray-300 rounded-md px-4 py-3 w-full sm:w-1/2"
+                />
+                <button
+                  onClick={handlePincodeCheck}
+                  className="bg-black hover:bg-gray-900 text-white px-6 py-3 rounded-md transition-colors w-full sm:w-auto"
+                >
+                  Check Delivery
+                </button>
+              </div>
+              {deliveryAvailable !== null && (
+                <p className={`mt-3 text-md ${deliveryAvailable ? "text-green-600" : "text-red-600"}`}>
+                  {deliveryAvailable
+                    ? "✅ Delivery is available in your area!"
+                    : "❌ Sorry, we don't deliver to this pincode."}
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Buy Now Button */}
-          <button className="mt-6 bg-black text-white px-6 py-2 rounded-lg">
-            Buy Now
-          </button>
+          {/* Buy Now */}
+          <div className="mt-10">
+            <button className="w-full bg-black hover:bg-gray-900 text-white py-4 text-lg font-semibold rounded-lg transition-colors">
+              Buy Now
+            </button>
+          </div>
         </div>
       </div>
     </div>

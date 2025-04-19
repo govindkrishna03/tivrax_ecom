@@ -27,7 +27,7 @@ export default function HeroCarousel() {
 
   return (
     <div className="w-full ">
-      <div className="w-full h-[200px] md:h-[500px] lg:h-[450px] sm:h-[400px] overflow-hidden shadow-xl">
+      <div className="w-full h-[250px] md:h-[500px] lg:h-[450px] sm:h-[400px] overflow-hidden shadow-xl">
         <Slider {...settings}>
           {images.map((src, index) => (
             <div key={index}>

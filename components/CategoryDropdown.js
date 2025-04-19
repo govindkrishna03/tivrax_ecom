@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 
 const categories = {
   Shirts: ["Oversized", "Chinese Collar", "Formal", "Casual"],
-  TShirts: ["Oversized", "Printed", "Plain", "Graphic"],
+  Tshirts: ["Oversized", "Printed", "Plain", "Graphic"],
   Hoodies: ["Zipper", "Pullover", "Oversized"],
   Jeans: ["Slim Fit", "Regular Fit", "Distressed"],
 };
@@ -51,7 +51,7 @@ export default function CategoryDropdown() {
           <div key={mainCategory} className="relative group">
             <button
               onClick={() => toggleDropdown(mainCategory)}
-              className="text-sm font-normal  sm:text-lg sm:font-medium text-gray-800 transition duration-300 "
+              className="text-sm font-medium sm:tetx-md sm:font-medium text-gray-800 transition duration-300 "
             >
               {mainCategory}
             </button>
