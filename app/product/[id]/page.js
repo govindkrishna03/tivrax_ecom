@@ -1,17 +1,23 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation"; // ✅ useRouter here
 
 const ProductDescriptionPage = () => {
-  const { id } = useParams();
+  const { id, link } = useParams(); 
+  const router = useRouter(); // ✅ Move this inside the component body
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState("");
   const [deliveryAvailable, setDeliveryAvailable] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [currentUrl, setCurrentUrl] = useState(''); // Store URL here
 
   useEffect(() => {
+    // Extract the current full URL
+    setCurrentUrl(window.location.href);
+
     const fetchProductData = async () => {
       try {
         const response = await fetch(`/api/product`);
@@ -32,6 +38,16 @@ const ProductDescriptionPage = () => {
   const handlePincodeCheck = () => {
     const availablePincodes = ["110001", "110002", "110003", "110004"];
     setDeliveryAvailable(availablePincodes.includes(pincode));
+  };
+
+  const handleBuyNow = () => {
+    if (!selectedSize) {
+      alert("Please select a size before proceeding.");
+      return;
+    }
+
+    // Now using the link extracted from the URL for the checkout
+    router.push(`/checkout?name=${encodeURIComponent(product.P_Name)}&price=${product.Rate}&size=${selectedSize}&img=${encodeURIComponent(product.P_Image)}&productId=${product.P_ID}&productLink=${encodeURIComponent(currentUrl)}`);
   };
 
   if (loading) {
@@ -121,7 +137,10 @@ const ProductDescriptionPage = () => {
 
           {/* Buy Now */}
           <div className="mt-10">
-            <button className="w-full bg-black hover:bg-gray-900 text-white py-4 text-lg font-semibold rounded-lg transition-colors">
+            <button
+              onClick={handleBuyNow}
+              className="w-full bg-black hover:bg-gray-900 text-white py-4 text-lg font-semibold rounded-lg transition-colors"
+            >
               Buy Now
             </button>
           </div>

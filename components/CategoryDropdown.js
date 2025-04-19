@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown } from 'lucide-react';
 
 const categories = {
   Shirts: ["Oversized", "Chinese Collar", "Formal", "Casual"],
@@ -26,12 +25,12 @@ export default function CategoryDropdown() {
 
     const handleEscapeKey = (e) => {
       if (e.key === 'Escape') {
-        setIsDropdownVisible(null); 
+        setIsDropdownVisible(null);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside); 
-    document.addEventListener('keydown', handleEscapeKey); 
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -41,34 +40,32 @@ export default function CategoryDropdown() {
 
   return (
     <div className="flex py-4 bg-white shadow-md sm:justify-evenly items-center justify-center">
-      <div className="flex sm:gap-[100px] lg:gap-[300px] md:gap-[200px] sm:px-10 gap-[50px] " ref={dropdownRef}>
+      <div
+        className="flex sm:gap-[100px] lg:gap-[300px] md:gap-[200px] sm:px-10 gap-[50px]"
+        ref={dropdownRef}
+      >
         {Object.entries(categories).map(([mainCategory, subcategories]) => (
           <div key={mainCategory} className="relative group">
             <button
               onClick={() => toggleDropdown(mainCategory)}
-              className="flex items-center  text-sm font-medium sm:text-md sm:font-medium text-gray-800 transition duration-300"
+              className="text-sm font-medium sm:text-md text-gray-800 transition duration-300"
             >
               {mainCategory}
-              <ChevronDown
-  size={16}
-  className={`hidden sm:inline transition-transform duration-300 ${
-    isDropdownVisible === mainCategory ? 'rotate-180' : ''
-  }`}
-/>
-
             </button>
 
-            {/* Dropdown */}
+           
             <div
-              className={`absolute left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] transition-opacity duration-300 ease-in-out ${
-                isDropdownVisible === mainCategory ? 'opacity-100 visible' : 'opacity-0 invisible'
-              }`}
+              className={`absolute left-0 mt-2 origin-top bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] transform transition-all duration-300 ease-in-out
+                ${isDropdownVisible === mainCategory
+                  ? 'scale-100 opacity-100 visible'
+                  : 'scale-95 opacity-0 invisible'}
+              `}
             >
               {subcategories.map((sub, idx) => (
                 <a
                   key={idx}
                   href={`/${mainCategory.toLowerCase()}/${sub.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="block px-4 py-2 text-gray-700 hover:bg-black hover:text-white transition duration-200"
+                  className="block px-4 py-2 text-gray-700 transition duration-200 hover:underline hover:underline-offset-4 hover:text-[#5a678b]"
                 >
                   {sub}
                 </a>
