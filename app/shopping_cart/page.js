@@ -2,25 +2,83 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '../../lib/supabase';
 
 export default function ShoppingCart() {
   const [cartItems, setCartItems] = useState([]);
-  const router = useRouter(); 
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
+  // Fetch cart items
   useEffect(() => {
-    const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
-    setCartItems(storedCart);
+    const getCartItems = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log('Session from getSession:', session);
+        if (sessionError) console.error('Session error:', sessionError);
+
+        let userId = session?.user?.id;
+
+        // Fallback if session is null
+        if (!userId) {
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          console.log('Fallback user:', user);
+          if (userError) console.error('User fetch error:', userError);
+          userId = user?.id;
+        }
+
+        if (!userId) {
+          console.warn('No user session found.');
+          setLoading(false);
+          return;
+        }
+
+        const { data: cart, error: cartError } = await supabase
+          .from('cart')
+          .select('*')
+          .eq('user_id', userId);
+
+        if (cartError) {
+          console.error('Error fetching cart items:', cartError);
+        } else {
+          console.log('Fetched cart items:', cart);
+          setCartItems(cart || []);
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching cart:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getCartItems();
   }, []);
 
-  const handleRemove = (id) => {
-    const updatedCart = cartItems.filter(item => item.id !== id);
-    setCartItems(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
+  const handleRemove = async (id) => {
+    const { error } = await supabase
+      .from('cart')
+      .delete()
+      .eq('id', id);
+  
+    if (error) {
+      console.error('Error removing item:', error);
+    } else {
+      const updatedCart = cartItems.filter(item => item.id !== id);
+      setCartItems(updatedCart);
+    }
   };
-
+  
   const handleProductClick = (id) => {
     router.push(`/product/${id}`);
   };
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <p className="text-lg text-gray-500">Loading cart...</p>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -47,7 +105,7 @@ export default function ShoppingCart() {
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
             <div
-              onClick={() => handleProductClick(item.id)} 
+              onClick={() => handleProductClick(item.product_id)}
               className="flex items-center gap-6 cursor-pointer"
             >
               <img

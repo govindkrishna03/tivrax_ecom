@@ -3,47 +3,94 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';  // Import the styles
+import 'react-toastify/dist/ReactToastify.css'; // Import the styles
+import { supabase } from './../lib/supabase'; // Import Supabase client
 
 const ProductCard = ({ id, name, rate, size, image }) => {
-  const router = useRouter();  // For navigation on click
+  const [cartItems, setCartItems] = useState([]);
+  const [userId, setUserId] = useState(null); // Store user ID
+  const router = useRouter(); // For navigation on click
 
-  const handleAddToCart = () => {
-    const newProduct = { id, name, rate, size, image };
-    const existingCart = JSON.parse(localStorage.getItem('cart')) || [];
-    
-    const isAlreadyInCart = existingCart.some(item => item.id === id);
-    if (!isAlreadyInCart) {
-      const updatedCart = [...existingCart, newProduct];
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
+  useEffect(() => {
+    // Subscribe to authentication state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id); // Set user ID from session
+      } else {
+        setUserId(null); // No user logged in
+      }
+    });
 
-      // Show a custom success toast notification
-      toast.success('Added to cart!', {
-        position: "top-center",
-        autoClose: 3000,  // Toast disappears after 3 seconds
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "light",
-      });
-    } else {
-      // Show a custom warning toast notification
-      toast.warn('Already in cart!', {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "light",
-      });
+    // Clean up the listener on component unmount
+    return () => {
+      if (authListener) {
+        authListener.subscription.unsubscribe();  // Correct way to unsubscribe
+      }
+    };
+  }, []);
+
+  // Fetch cart items from Supabase
+  const fetchCartItems = async () => {
+    if (userId) {
+      const { data, error } = await supabase
+        .from('cart')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error("Error fetching cart:", error.message);
+      } else {
+        setCartItems(data || []);
+      }
     }
   };
+
+ // Handle adding product to cart
+const handleAddToCart = async () => {
+  if (!userId) {
+    toast.error('You must be logged in to add items to the cart');
+    return;
+  }
+  const newProduct = { 
+    product_id: id, // change from `id` to `product_id`
+    name, 
+    rate, 
+    size, 
+    image,
+    user_id: userId 
+  };
+  
+  // Check if the product is already in the cart
+  const isAlreadyInCart = cartItems.some(item => item.id === id);
+
+  if (!isAlreadyInCart) {
+    const { error } = await supabase
+    .from('cart')
+    .insert([newProduct]);
+  
+
+    if (error) {
+      toast.error('Error adding to cart!');
+      console.error('Error adding to cart:', error.message);
+    } else {
+      fetchCartItems(); // Refresh cart state
+      toast.success('Added to cart!');
+    }
+  } else {
+    toast.warn('Already in cart!');
+  }
+};
+
 
   const handleProductClick = () => {
     router.push(`/product/${id}`);
   };
+
+  useEffect(() => {
+    if (userId) {
+      fetchCartItems(); // Fetch cart items after user ID is set
+    }
+  }, [userId]);
 
   if (!id) return null;
 
@@ -68,14 +115,13 @@ const ProductCard = ({ id, name, rate, size, image }) => {
         </h3>
         <span className="text-sm text-gray-600 mb-1">Size: {size}</span>
         <span className="text-xl sm:text-3xl font-bold text-black mb-2">
-  ₹{rate}
-</span>
-
+          ₹{rate}
+        </span>
 
         {/* Add to Cart Button */}
         <button
           onClick={(e) => {
-            e.stopPropagation();  // Prevent triggering the product click event
+            e.stopPropagation(); // Prevent triggering the product click event
             handleAddToCart();
           }}
           className="sm:w-[50%] text-white bg-black transform hover:scale-110 transition-all duration-300 font-medium rounded-4xl text-sm px-5 py-2.5 mt-3 shadow-md hover:shadow-lg"
@@ -83,7 +129,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
           Add to cart
         </button>
       </div>
-      
+
       {/* Toast Container */}
       <ToastContainer />
     </div>

@@ -1,9 +1,8 @@
-'use client';  // Add 'use client' at the top to specify this is a client component
-
+'use client';
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from '../../lib/supabase'; // Ensure the supabase client is correctly initialized
 
-// Checkout client component code remains the same as before
 const CheckoutClient = () => {
   const searchParams = useSearchParams();
 
@@ -19,6 +18,7 @@ const CheckoutClient = () => {
     phone: "",
     address: "",
     pincode: "",
+    email: ""
   });
 
   const [errors, setErrors] = useState({
@@ -27,6 +27,26 @@ const CheckoutClient = () => {
     address: "",
     pincode: "",
   });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error.message);
+        return;
+      }
+
+      if (data) {
+        setUserDetails((prev) => ({
+          ...prev,
+          name: data.user.user_metadata?.full_name || "",
+          email: data.user.email || "",
+        }));
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleChange = (e) => {
     setUserDetails((prev) => ({
@@ -76,31 +96,52 @@ const CheckoutClient = () => {
     return isValid;
   };
 
-  const handlePlaceOrder = () => {
-    const { name: userName, phone, address, pincode } = userDetails;
-
+  const handlePlaceOrder = async () => {
     if (!validateForm()) return;
 
-    const message = `Hello! I would like to place an order:
-*Product ID*: ${productId}
-*Product*: ${name}
-*Price*: ₹${price}
-*Size*: ${size}
-*Name*: ${userName}
-*Phone*: ${phone}
-*Address*: ${address}
-*Pincode*: ${pincode}
-*Product Link*: ${productLink}`;
+    const { name: userName, phone, address, pincode } = userDetails;
+    const { data: user, error: userError } = await supabase.auth.getUser();
+if (userError) {
+  console.error("Error fetching user:", userError.message);
+  return;
+}
 
-    const businessPhoneNumber = "6238917427";
-    const whatsappURL = `https://wa.me/91${businessPhoneNumber}?text=${encodeURIComponent(message)}`;
+    const orderData = {
+      product_id: productId,
+      product_name: name,
+      price: parseFloat(price),
+      size: size,
+      address: address,
+      phone: phone,
+      pincode: pincode,
+      user_id: user?.id,
+      created_at: new Date(),
+    };
 
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([orderData]);
 
-    if (isMobile) {
-      window.open(whatsappURL, "_blank");
-    } else {
-      window.open(`https://web.whatsapp.com/send?phone=91${businessPhoneNumber}&text=${encodeURIComponent(message)}`, "_blank");
+      if (error) {
+        console.error('Error inserting order:', error.message);
+        alert('An error occurred while placing the order.');
+        return;
+      }
+
+      console.log('Order placed successfully', data);
+      alert('Your order has been placed successfully!');
+      // Optionally, reset the form or redirect to a confirmation page
+      setUserDetails({
+        name: "",
+        phone: "",
+        address: "",
+        pincode: "",
+        email: "",
+      });
+    } catch (err) {
+      console.error('Error placing order:', err.message);
+      alert('An error occurred while placing the order.');
     }
   };
 
@@ -110,7 +151,11 @@ const CheckoutClient = () => {
         <h1 className="text-2xl font-bold mb-6 text-gray-800">Checkout</h1>
 
         <div className="flex flex-col sm:flex-row gap-6 items-center mb-8">
-          <img src={img || ""} alt={name || "Product"} className="w-28 h-28 object-cover rounded-lg mb-4 sm:mb-0" />
+          <img
+            src={img || "/default-product-image.jpg"}  // Use a default image if none is provided
+            alt={name || "Product"}
+            className="w-28 h-28 object-cover rounded-lg mb-4 sm:mb-0"
+          />
           <div>
             <h2 className="text-lg font-semibold">{name}</h2>
             <p className="text-gray-600">Size: {size}</p>
@@ -164,7 +209,7 @@ const CheckoutClient = () => {
           onClick={handlePlaceOrder}
           className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-md text-lg font-semibold transition-colors"
         >
-          Place Order via WhatsApp
+          Proceed to Payment
         </button>
       </div>
     </div>
