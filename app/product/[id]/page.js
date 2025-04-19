@@ -6,17 +6,24 @@ import { useParams } from "next/navigation";
 const ProductDescriptionPage = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState("");
   const [deliveryAvailable, setDeliveryAvailable] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
 
   useEffect(() => {
     const fetchProductData = async () => {
-      const response = await fetch(`/api/product`);
-      const data = await response.json();
+      try {
+        const response = await fetch(`/api/product`);
+        const data = await response.json();
 
-      const product = data.find((p) => p.P_ID.toString() === id);
-      setProduct(product);
+        const foundProduct = data.find((p) => p.P_ID.toString() === id);
+        setProduct(foundProduct || null);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchProductData();
@@ -27,8 +34,12 @@ const ProductDescriptionPage = () => {
     setDeliveryAvailable(availablePincodes.includes(pincode));
   };
 
+  if (loading) {
+    return <p className="text-center text-lg text-gray-600 mt-12">Loading product...</p>;
+  }
+
   if (!product) {
-    return <p className="text-center text-lg text-gray-600 mt-12">Product not found</p>;
+    return <p className="text-center text-lg text-red-600 mt-12">Product not found</p>;
   }
 
   return (
@@ -45,7 +56,6 @@ const ProductDescriptionPage = () => {
 
         {/* Product Details */}
         <div className="lg:w-1/2 w-full p-8 flex flex-col justify-between">
-          {/* Name */}
           <div>
             <h1 className="text-4xl font-bold text-gray-900">{product.P_Name}</h1>
             <p className="text-gray-500 text-lg mt-2">{product.Category}</p>

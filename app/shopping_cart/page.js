@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function ShoppingCart() {
   const [cartItems, setCartItems] = useState([]);
-  const router = useRouter(); // Initialize the router
+  const router = useRouter(); 
 
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -19,7 +19,6 @@ export default function ShoppingCart() {
   };
 
   const handleProductClick = (id) => {
-    // Navigate to the product description page
     router.push(`/product/${id}`);
   };
 
@@ -48,7 +47,7 @@ export default function ShoppingCart() {
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
             <div
-              onClick={() => handleProductClick(item.id)} // Add click handler here
+              onClick={() => handleProductClick(item.id)} 
               className="flex items-center gap-6 cursor-pointer"
             >
               <img
