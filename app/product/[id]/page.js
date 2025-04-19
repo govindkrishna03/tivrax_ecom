@@ -1,21 +1,20 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation"; // ✅ useRouter here
+import { useParams, useRouter } from "next/navigation";
 
 const ProductDescriptionPage = () => {
   const { id, link } = useParams(); 
-  const router = useRouter(); // ✅ Move this inside the component body
+  const router = useRouter();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState("");
   const [deliveryAvailable, setDeliveryAvailable] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
-  const [currentUrl, setCurrentUrl] = useState(''); // Store URL here
+  const [currentUrl, setCurrentUrl] = useState("");
 
   useEffect(() => {
-    // Extract the current full URL
     setCurrentUrl(window.location.href);
 
     const fetchProductData = async () => {
@@ -46,8 +45,9 @@ const ProductDescriptionPage = () => {
       return;
     }
 
-    // Now using the link extracted from the URL for the checkout
-    router.push(`/checkout?name=${encodeURIComponent(product.P_Name)}&price=${product.Rate}&size=${selectedSize}&img=${encodeURIComponent(product.P_Image)}&productId=${product.P_ID}&productLink=${encodeURIComponent(currentUrl)}`);
+    router.push(
+      `/checkout?name=${encodeURIComponent(product.P_Name)}&price=${product.Rate}&size=${selectedSize}&img=${encodeURIComponent(product.P_Image)}&productId=${product.P_ID}&productLink=${encodeURIComponent(currentUrl)}`
+    );
   };
 
   if (loading) {
@@ -61,7 +61,6 @@ const ProductDescriptionPage = () => {
   return (
     <div className="container mx-auto px-6 py-12">
       <div className="flex flex-col lg:flex-row bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-200">
-        {/* Product Image */}
         <div className="lg:w-1/2 w-full p-8 bg-gray-50 flex items-center justify-center">
           <img
             src={product.P_Image}
@@ -70,13 +69,11 @@ const ProductDescriptionPage = () => {
           />
         </div>
 
-        {/* Product Details */}
         <div className="lg:w-1/2 w-full p-8 flex flex-col justify-between">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">{product.P_Name}</h1>
             <p className="text-gray-500 text-lg mt-2">{product.Category}</p>
 
-            {/* Size Selector */}
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2 text-gray-700">Select Size</h3>
               <div className="flex gap-4 flex-wrap">
@@ -96,18 +93,15 @@ const ProductDescriptionPage = () => {
               </div>
             </div>
 
-            {/* Price */}
             <div className="mt-6">
               <p className="text-3xl font-bold text-gray-800">₹{product.Rate}</p>
             </div>
 
-            {/* Description */}
             <div className="mt-6">
               <h4 className="text-md font-semibold mb-1 text-gray-700">Product Description</h4>
               <p className="text-gray-600 leading-relaxed">{product.Description}</p>
             </div>
 
-            {/* Pincode Checker */}
             <div className="mt-8">
               <h4 className="text-md font-semibold mb-2 text-gray-700">Check Delivery</h4>
               <div className="flex gap-3 flex-col sm:flex-row">
@@ -135,7 +129,6 @@ const ProductDescriptionPage = () => {
             </div>
           </div>
 
-          {/* Buy Now */}
           <div className="mt-10">
             <button
               onClick={handleBuyNow}
