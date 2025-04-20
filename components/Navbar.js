@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { supabase } from ".././lib/supabase"; 
+import { supabase } from "../lib/supabase"; 
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {
@@ -104,38 +104,45 @@ export default function Navbar() {
           </button>
 
           {showDropdown && (
-  <div className="absolute right-0 mt-30 w-36 bg-white shadow-lg rounded-md text-sm z-50">
-    {user ? (
-      <>
-        <button
-          onClick={handleProfileClick}
-          className="w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold"
-        >
-          Profile
-        </button>
-        <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            setUser(null);
-            setShowDropdown(false);
-            router.push("/");
-          }}
-          className="w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold text-red-600"
-        >
-          Logout
-        </button>
-      </>
-    ) : (
-      <Link
-        href="/auth/signin"
-        className="block px-4 py-2 hover:bg-gray-100 font-semibold"
-      >
-        Login / Sign Up
-      </Link>
-    )}
-  </div>
-)}
+            <div className="absolute right-0 mt-30 w-36 bg-white shadow-lg rounded-md text-sm z-50">
+              {user ? (
+                <>
+                  <button
+                    onClick={handleProfileClick}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold"
+                  >
+                    Profile
+                  </button>
 
+                  <Link
+                    href="/orders"
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold"
+                  >
+                    Orders
+                  </Link>
+
+                  <button
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      setUser(null);
+                      setShowDropdown(false);
+                      router.push("/");
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold text-red-600"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/auth/signin"
+                  className="block px-4 py-2 hover:bg-gray-100 font-semibold"
+                >
+                  Login / Sign Up
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

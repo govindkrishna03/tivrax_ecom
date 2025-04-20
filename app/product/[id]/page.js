@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { supabase } from "../../../lib/supabase";
+import toast from "react-hot-toast";
 
 const ProductDescriptionPage = () => {
-  const { id, link } = useParams(); 
+  const { id, link } = useParams();
   const router = useRouter();
 
   const [product, setProduct] = useState(null);
@@ -13,7 +15,9 @@ const ProductDescriptionPage = () => {
   const [deliveryAvailable, setDeliveryAvailable] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [currentUrl, setCurrentUrl] = useState("");
+  const [user, setUser] = useState(null);
 
+  // Set current URL and fetch product on load
   useEffect(() => {
     setCurrentUrl(window.location.href);
 
@@ -21,7 +25,6 @@ const ProductDescriptionPage = () => {
       try {
         const response = await fetch(`/api/product`);
         const data = await response.json();
-
         const foundProduct = data.find((p) => p.P_ID.toString() === id);
         setProduct(foundProduct || null);
       } catch (error) {
@@ -34,14 +37,41 @@ const ProductDescriptionPage = () => {
     fetchProductData();
   }, [id]);
 
+  // Fetch user info
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    getUser();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
+
   const handlePincodeCheck = () => {
     const availablePincodes = ["110001", "110002", "110003", "110004"];
     setDeliveryAvailable(availablePincodes.includes(pincode));
   };
 
   const handleBuyNow = () => {
+    if (!user) {
+      toast.error("Please sign in to continue with your purchase.");
+      return;
+    }
+
     if (!selectedSize) {
-      alert("Please select a size before proceeding.");
+      toast("Please select a size before proceeding.", {
+        icon: "👕",
+      });
       return;
     }
 
@@ -130,12 +160,23 @@ const ProductDescriptionPage = () => {
           </div>
 
           <div className="mt-10">
+            {!user && (
+              <div className="mt-8 text-center text-red-600 font-medium text-lg">
+                Please <span className="underline cursor-pointer" onClick={() => router.push("/auth/signin")}>log in</span> to proceed with the purchase.
+              </div>
+            )}
+
             <button
               onClick={handleBuyNow}
-              className="w-full bg-black hover:bg-gray-900 text-white py-4 text-lg font-semibold rounded-lg transition-colors"
+              disabled={!user}
+              className={`w-full py-4 text-lg font-semibold rounded-lg transition-colors ${user
+                  ? "bg-black hover:bg-gray-900 text-white"
+                  : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                }`}
             >
               Buy Now
             </button>
+
           </div>
         </div>
       </div>

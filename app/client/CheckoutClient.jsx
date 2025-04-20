@@ -1,10 +1,11 @@
 'use client';
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { supabase } from '../../lib/supabase'; // Ensure the supabase client is correctly initialized
+import { useRouter } from "next/navigation"; // Ensure this import is correct
 
 const CheckoutClient = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();  // Initialize the router inside the functional component
 
   const name = searchParams.get("name");
   const price = searchParams.get("price");
@@ -26,32 +27,20 @@ const CheckoutClient = () => {
     phone: "",
     address: "",
     pincode: "",
+    email: ""
   });
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error("Error fetching user:", error.message);
-        return;
-      }
-
-      if (data) {
-        setUserDetails((prev) => ({
-          ...prev,
-          name: data.user.user_metadata?.full_name || "",
-          email: data.user.email || "",
-        }));
-      }
-    };
-
-    fetchUserData();
+    // Fetch user data (optional, could be for pre-filling user details)
+    // Removed database interaction here, we only handle data from searchParams or local state
   }, []);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
     setUserDetails((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
   };
 
@@ -62,33 +51,43 @@ const CheckoutClient = () => {
       phone: "",
       address: "",
       pincode: "",
+      email: ""
     };
 
-    if (!userDetails.name) {
+    if (!userDetails.name.trim()) {
       newErrors.name = "Name is required.";
       isValid = false;
     }
 
     const phoneRegex = /^[0-9]{10}$/;
-    if (!userDetails.phone) {
+    if (!userDetails.phone.trim()) {
       newErrors.phone = "Phone number is required.";
       isValid = false;
-    } else if (!phoneRegex.test(userDetails.phone)) {
+    } else if (!phoneRegex.test(userDetails.phone.trim())) {
       newErrors.phone = "Phone number should be 10 digits.";
       isValid = false;
     }
 
-    if (!userDetails.address) {
+    if (!userDetails.address.trim()) {
       newErrors.address = "Address is required.";
       isValid = false;
     }
 
     const pincodeRegex = /^[0-9]{6}$/;
-    if (!userDetails.pincode) {
+    if (!userDetails.pincode.trim()) {
       newErrors.pincode = "Pincode is required.";
       isValid = false;
-    } else if (!pincodeRegex.test(userDetails.pincode)) {
+    } else if (!pincodeRegex.test(userDetails.pincode.trim())) {
       newErrors.pincode = "Pincode should be 6 digits.";
+      isValid = false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!userDetails.email.trim()) {
+      newErrors.email = "Email is required.";
+      isValid = false;
+    } else if (!emailRegex.test(userDetails.email.trim())) {
+      newErrors.email = "Enter a valid email address.";
       isValid = false;
     }
 
@@ -96,16 +95,12 @@ const CheckoutClient = () => {
     return isValid;
   };
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = () => {
     if (!validateForm()) return;
 
-    const { name: userName, phone, address, pincode } = userDetails;
-    const { data: user, error: userError } = await supabase.auth.getUser();
-if (userError) {
-  console.error("Error fetching user:", userError.message);
-  return;
-}
+    const { name: userName, phone, address, pincode, email } = userDetails;
 
+    // Prepare order data to pass to the next page (payment)
     const orderData = {
       product_id: productId,
       product_name: name,
@@ -114,35 +109,11 @@ if (userError) {
       address: address,
       phone: phone,
       pincode: pincode,
-      user_id: user?.id,
-      created_at: new Date(),
+      email: email,
     };
 
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .insert([orderData]);
-
-      if (error) {
-        console.error('Error inserting order:', error.message);
-        alert('An error occurred while placing the order.');
-        return;
-      }
-
-      console.log('Order placed successfully', data);
-      alert('Your order has been placed successfully!');
-      // Optionally, reset the form or redirect to a confirmation page
-      setUserDetails({
-        name: "",
-        phone: "",
-        address: "",
-        pincode: "",
-        email: "",
-      });
-    } catch (err) {
-      console.error('Error placing order:', err.message);
-      alert('An error occurred while placing the order.');
-    }
+    // Navigate to the payment page, passing the order details as query parameters
+    router.push(`/payment?name=${encodeURIComponent(name)}&price=${price}&size=${size}&img=${encodeURIComponent(img)}&address=${encodeURIComponent(address)}&phone=${phone}&pincode=${pincode}`);
   };
 
   return (
@@ -152,7 +123,7 @@ if (userError) {
 
         <div className="flex flex-col sm:flex-row gap-6 items-center mb-8">
           <img
-            src={img || "/default-product-image.jpg"}  // Use a default image if none is provided
+            src={img || "/default-product-image.jpg"}
             alt={name || "Product"}
             className="w-28 h-28 object-cover rounded-lg mb-4 sm:mb-0"
           />
@@ -164,45 +135,26 @@ if (userError) {
         </div>
 
         <div className="space-y-4">
-          <input
-            type="text"
-            name="name"
-            placeholder="Your Name"
-            value={userDetails.name}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-4 py-3"
-          />
-          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-
-          <input
-            type="tel"
-            name="phone"
-            placeholder="Phone Number"
-            value={userDetails.phone}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-4 py-3"
-          />
-          {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-
-          <input
-            type="text"
-            name="address"
-            placeholder="Delivery Address"
-            value={userDetails.address}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-4 py-3"
-          />
-          {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
-
-          <input
-            type="text"
-            name="pincode"
-            placeholder="Pincode"
-            value={userDetails.pincode}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-4 py-3"
-          />
-          {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>}
+          {[
+            { name: "name", placeholder: "Your Name", type: "text" },
+            { name: "phone", placeholder: "Phone Number", type: "tel" },
+            { name: "address", placeholder: "Delivery Address", type: "text" },
+            { name: "pincode", placeholder: "Pincode", type: "text" },
+            { name: "email", placeholder: "Email Address", type: "email" },
+          ].map(({ name, placeholder, type }) => (
+            <div key={name}>
+              <input
+                type={type}
+                name={name}
+                placeholder={placeholder}
+                value={userDetails[name]}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-4 py-3"
+                required
+              />
+              {errors[name] && <p className="text-red-500 text-sm mt-1">{errors[name]}</p>}
+            </div>
+          ))}
         </div>
 
         <button

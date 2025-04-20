@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase"; // Adjust the path to your Supabase client
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -16,7 +17,6 @@ export default function SignIn() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Sign in with Supabase
       const { user, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -24,7 +24,7 @@ export default function SignIn() {
 
       if (error) throw error;
 
-      router.push("/"); // Redirect to homepage on successful login
+      router.push("/");
     } catch (err) {
       setError(err.message);
       console.error("Error during sign in:", err);
@@ -33,10 +33,29 @@ export default function SignIn() {
     }
   };
 
+  const handleForgotPassword = () => {
+    router.push("/auth/forgot-password");
+  };
+
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100 p-4">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
-        <div className="mb-6 justify-center items-center flex">
+    <motion.div
+      className="flex justify-center items-center h-screen bg-gray-100 p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div
+        className="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center"
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        <motion.div
+          className="mb-6 justify-center items-center flex"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.4 }}
+        >
           <Image
             src="/logo.png"
             alt="Tivrax Logo"
@@ -45,7 +64,7 @@ export default function SignIn() {
             className="object-contain"
             priority
           />
-        </div>
+        </motion.div>
 
         <h2 className="text-2xl font-semibold mb-6">Sign In</h2>
 
@@ -64,7 +83,7 @@ export default function SignIn() {
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-2">
             <label htmlFor="password" className="block text-sm font-medium text-gray-600 mb-2">
               Password
             </label>
@@ -76,6 +95,16 @@ export default function SignIn() {
               className="w-full p-3 border border-gray-300 rounded-lg"
               required
             />
+          </div>
+
+          <div className="mb-4 text-right">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="text-sm text-blue-500 hover:underline"
+            >
+              Forgot password?
+            </button>
           </div>
 
           {error && <p className="text-red-500 mb-4">{error}</p>}
@@ -95,7 +124,7 @@ export default function SignIn() {
             </a>
           </p>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

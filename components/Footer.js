@@ -42,7 +42,7 @@ const Footer = () => {
             Email: support@tivrax.com
           </p>
           <p className="text-sm text-gray-300">
-            Phone: xxx-xxxx-xxxx
+            Phone: +91-7418713243
           </p>
         </div>
 
