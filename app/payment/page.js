@@ -1,6 +1,6 @@
 'use client';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '../../lib/supabase'; // Make sure supabase client is configured
 
 const PaymentPage = () => {
@@ -181,4 +181,11 @@ const PaymentPage = () => {
   );
 };
 
-export default PaymentPage;
+// Wrap with Suspense for Next.js 15.3
+export default function PaymentPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentPage />
+    </Suspense>
+  );
+}
