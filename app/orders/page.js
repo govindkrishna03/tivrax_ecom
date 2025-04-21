@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, XCircle } from "lucide-react";
+import Loading from "../../components/Loading";
+
+
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -44,18 +47,14 @@ export default function Orders() {
     fetchOrders();
   }, [router]);
 
+ 
   if (loading) {
-    return (
-      <div className="text-center py-20 text-gray-500 flex flex-col items-center">
-        <Loader2 className="animate-spin mb-2" size={24} />
-        Loading orders...
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-xl shadow-md flex-1">
+    <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-xl shadow-md flex-1">
         <h2 className="text-2xl font-bold text-center mb-6">Your Orders</h2>
 
         {errorMessage && (

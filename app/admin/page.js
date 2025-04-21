@@ -33,8 +33,6 @@ const AdminPage = () => {
     }
   };
 
-  // ... rest of the code remains unchanged ...
-
   const fetchOrders = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -69,86 +67,95 @@ const AdminPage = () => {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-center text-blue-800">Admin Order Dashboard</h1>
+    <div className="bg-gray-100 min-h-screen">
+      <div className="max-w-7xl mx-auto p-8">
+        <h1 className="text-4xl font-semibold text-center text-blue-800 mb-6">Admin Order Dashboard</h1>
 
-      <div className="flex justify-between items-center mb-4">
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="border px-3 py-2 rounded-md shadow-sm"
-        >
-          <option>All</option>
-          <option>Pending</option>
-          <option>Success</option>
-          <option>Failed</option>
-        </select>
+        <div className="flex justify-between items-center mb-6">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="bg-white border border-gray-300 rounded-md shadow-sm p-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-600"
+          >
+            <option>All</option>
+            <option>Pending</option>
+            <option>Success</option>
+            <option>Failed</option>
+          </select>
 
-        <button
-          onClick={fetchOrders}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        >
-          Refresh
-        </button>
-      </div>
-
-      {loading ? (
-        <p className="text-center">Loading orders...</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 border">Product</th>
-                <th className="px-4 py-2 border">User</th>
-                <th className="px-4 py-2 border">Price</th>
-                <th className="px-4 py-2 border">Size</th>
-                <th className="px-4 py-2 border">Payment</th>
-                <th className="px-4 py-2 border">Status</th>
-                <th className="px-4 py-2 border">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="text-center">
-                  <td className="px-4 py-2 border">{order.product_name}</td>
-                  <td className="px-4 py-2 border">{order.email}</td>
-                  <td className="px-4 py-2 border">₹{order.price}</td>
-                  <td className="px-4 py-2 border">{order.size}</td>
-                  <td className="px-4 py-2 border">{order.payment_method}</td>
-                  <td className="px-4 py-2 border">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        order.payment_status === 'Success'
-                          ? 'bg-green-100 text-green-800'
-                          : order.payment_status === 'Failed'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {order.payment_status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 border space-x-2">
-                    <button
-                      onClick={() => updateStatus(order.id, 'Success')}
-                      className="text-green-600 hover:underline"
-                    >
-                      Mark Success
-                    </button>
-                    <button
-                      onClick={() => updateStatus(order.id, 'Failed')}
-                      className="text-red-600 hover:underline"
-                    >
-                      Mark Failed
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <button
+            onClick={fetchOrders}
+            className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 shadow-md transition"
+          >
+            Refresh Orders
+          </button>
         </div>
-      )}
+
+        {loading ? (
+          <div className="text-center">Loading orders...</div>
+        ) : (
+          <div className="overflow-x-auto shadow-lg bg-white rounded-lg">
+            <table className="min-w-full table-auto">
+              <thead className="bg-gray-200">
+                <tr>
+                <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Order_ID</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Product_ID</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Product_Name</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">User</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Price</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Size</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Payment</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Address</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Status</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm font-medium text-gray-700">
+                {filteredOrders.map((order) => (
+                  <tr key={order.id} className="border-t">
+                    <td className="px-4 py-3">{order.order_id}</td>
+
+                    <td className="px-4 py-3">{order.product_id}</td>
+                    <td className="px-4 py-3">{order.product_name}</td>
+                    <td className="px-4 py-3">{order.email}</td>
+                    <td className="px-4 py-3">₹{order.price}</td>
+                    <td className="px-4 py-3">{order.size}</td>
+                    <td className="px-4 py-3">{order.payment_method}</td>
+                    <td className="px-4 py-3">{order.shipping_address}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          order.payment_status === 'Success'
+                            ? 'bg-green-100 text-green-800'
+                            : order.payment_status === 'Failed'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {order.payment_status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 space-x-4">
+                      <button
+                        onClick={() => updateStatus(order.id, 'Success')}
+                        className="text-green-600 hover:underline transition"
+                      >
+                        Mark Success
+                      </button>
+                      <button
+                        onClick={() => updateStatus(order.id, 'Failed')}
+                        className="text-red-600 hover:underline transition"
+                      >
+                        Mark Failed
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

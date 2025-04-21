@@ -1,12 +1,19 @@
 'use client';
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // Ensure this import is correct
+import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 
-const CheckoutClient = () => {
+const CheckoutPage = () => {
   const searchParams = useSearchParams();
-  const router = useRouter();  // Initialize the router inside the functional component
+  const router = useRouter();
 
+  // Extract product data from URL params
+  const productParam = searchParams.get("products");
+  const products = productParam ? JSON.parse(decodeURIComponent(productParam)) : [];
+  const totalPrice = products.reduce((sum, product) => sum + parseFloat(product.price), 0);
+
+  // Extract individual product details
   const name = searchParams.get("name");
   const price = searchParams.get("price");
   const size = searchParams.get("size");
@@ -22,6 +29,7 @@ const CheckoutClient = () => {
     email: ""
   });
 
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [errors, setErrors] = useState({
     name: "",
     phone: "",
@@ -29,21 +37,18 @@ const CheckoutClient = () => {
     pincode: "",
     email: ""
   });
-
-  useEffect(() => {
-    // Fetch user data (optional, could be for pre-filling user details)
-    // Removed database interaction here, we only handle data from searchParams or local state
-  }, []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderConfirmed, setOrderConfirmed] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setUserDetails((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
+  // Validate form fields
   const validateForm = () => {
     let isValid = true;
     const newErrors = {
@@ -95,25 +100,48 @@ const CheckoutClient = () => {
     return isValid;
   };
 
-  const handlePlaceOrder = () => {
-    if (!validateForm()) return;
+  const handleConfirmOrder = async () => {
+    if (!paymentMethod) {
+      alert('Please select a payment method!');
+      return;
+    }
 
-    const { name: userName, phone, address, pincode, email } = userDetails;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-    // Prepare order data to pass to the next page (payment)
-    const orderData = {
-      product_id: productId,
-      product_name: name,
-      price: parseFloat(price),
-      size: size,
-      address: address,
-      phone: phone,
-      pincode: pincode,
-      email: email,
-    };
+    try {
+      // Insert order data into the database
+      const { data, error } = await supabase.from('orders').insert([
+        {
+          product_id: productId,
+          product_name: name,
+          price: totalPrice,
+          size,
+          address: userDetails.address,
+          phone: userDetails.phone,
+          pincode: userDetails.pincode,
+          email: userDetails.email,
+          user_name: userDetails.name,
+          payment_method: paymentMethod,
+          payment_status: 'Pending',
+          created_at: new Date().toISOString(),
+        },
+      ]);
 
-    // Navigate to the payment page, passing the order details as query parameters
-    router.push(`/payment?name=${encodeURIComponent(name)}&price=${price}&size=${size}&img=${encodeURIComponent(img)}&address=${encodeURIComponent(address)}&phone=${phone}&pincode=${pincode}`);
+      if (error) throw error;
+
+      console.log('Order inserted:', data);
+      setOrderConfirmed(true);
+
+      // Simulate redirect to a confirmation page after 3 seconds
+      setTimeout(() => {
+        router.push('/');
+      }, 3000);
+    } catch (error) {
+      console.error('Error confirming order:', error.message);
+      alert('There was a problem confirming your order. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -121,6 +149,7 @@ const CheckoutClient = () => {
       <div className="bg-white shadow-lg rounded-xl p-8 max-w-xl mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-gray-800">Checkout</h1>
 
+        {/* Product Summary */}
         <div className="flex flex-col sm:flex-row gap-6 items-center mb-8">
           <img
             src={img || "/default-product-image.jpg"}
@@ -134,6 +163,7 @@ const CheckoutClient = () => {
           </div>
         </div>
 
+        {/* User details form */}
         <div className="space-y-4">
           {[
             { name: "name", placeholder: "Your Name", type: "text" },
@@ -157,15 +187,46 @@ const CheckoutClient = () => {
           ))}
         </div>
 
+        {/* Payment Method Selection */}
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold mb-4">Choose Payment Method</h3>
+          {['Cash on Delivery', 'Google Pay', 'PhonePe'].map((method) => (
+            <label key={method} className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="payment"
+                value={method}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="accent-blue-600"
+                disabled={isSubmitting}
+              />
+              <span className="text-gray-800">{method}</span>
+            </label>
+          ))}
+        </div>
+
+        {/* Proceed to Payment Button */}
         <button
-          onClick={handlePlaceOrder}
-          className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-md text-lg font-semibold transition-colors"
+          onClick={handleConfirmOrder}
+          className={`mt-6 w-full ${isSubmitting ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'} text-white py-3 rounded-md text-lg font-semibold transition-all`}
+          disabled={isSubmitting}
         >
-          Proceed to Payment
+          {isSubmitting ? 'Processing...' : 'Confirm Order'}
         </button>
       </div>
+
+      {/* Confirmation Modal */}
+      {orderConfirmed && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg text-center max-w-sm mx-auto">
+            <h2 className="text-xl font-bold text-yellow-600 mb-2">Confirmation Pending</h2>
+            <p className="text-gray-700 mb-4">Your order has been received. We will update the status in your orders tab soon.</p>
+            <p className="text-sm text-gray-500">Redirecting you to the homepage...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default CheckoutClient;
+export default CheckoutPage;

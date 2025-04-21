@@ -9,43 +9,28 @@ export default function ShoppingCart() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Fetch cart items
   useEffect(() => {
     const getCartItems = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('Session from getSession:', session);
-        if (sessionError) console.error('Session error:', sessionError);
-
+        const { data: { session } } = await supabase.auth.getSession();
         let userId = session?.user?.id;
 
-        // Fallback if session is null
         if (!userId) {
-          const { data: { user }, error: userError } = await supabase.auth.getUser();
-          console.log('Fallback user:', user);
-          if (userError) console.error('User fetch error:', userError);
+          const { data: { user } } = await supabase.auth.getUser();
           userId = user?.id;
         }
 
-        if (!userId) {
-          console.warn('No user session found.');
-          setLoading(false);
-          return;
-        }
+        if (!userId) return setLoading(false);
 
-        const { data: cart, error: cartError } = await supabase
+        const { data: cart, error } = await supabase
           .from('cart')
           .select('*')
           .eq('user_id', userId);
 
-        if (cartError) {
-          console.error('Error fetching cart items:', cartError);
-        } else {
-          console.log('Fetched cart items:', cart);
-          setCartItems(cart || []);
-        }
+        if (error) console.error('Error fetching cart items:', error);
+        setCartItems(cart || []);
       } catch (err) {
-        console.error('Unexpected error fetching cart:', err);
+        console.error('Error fetching cart:', err);
       } finally {
         setLoading(false);
       }
@@ -54,31 +39,53 @@ export default function ShoppingCart() {
     getCartItems();
   }, []);
 
-  const handleRemove = async (id) => {
-    const { error } = await supabase
-      .from('cart')
-      .delete()
-      .eq('id', id);
+  const handleQuantityChange = async (id, delta) => {
+    const currentItem = cartItems.find(item => item.id === id);
   
-    if (error) {
-      console.error('Error removing item:', error);
+    if (!currentItem) return;
+  
+    const newQty = (currentItem.quantity || 1) + delta;
+  
+    if (newQty <= 0) {
+      const { error } = await supabase.from('cart').delete().eq('id', id);
+      if (!error) {
+        setCartItems(cartItems.filter(item => item.id !== id));
+      }
     } else {
-      const updatedCart = cartItems.filter(item => item.id !== id);
-      setCartItems(updatedCart);
+      const { error } = await supabase
+        .from('cart')
+        .update({ quantity: newQty })
+        .eq('id', id);
+  
+      if (!error) {
+        setCartItems(prevItems =>
+          prevItems.map(item =>
+            item.id === id ? { ...item, quantity: newQty } : item
+          )
+        );
+      }
     }
   };
   
-  const handleProductClick = (id) => {
-    router.push(`/product/${id}`);
+
+  const handleProductClick = (id) => router.push(`/product/${id}`);
+  const handleBuyAll = () => {
+    alert('Redirect to payment or WhatsApp with full cart');
   };
 
-  if (loading) {
-    return (
-      <div className="h-screen bg-gray-50 flex flex-col items-center justify-center">
-        <p className="text-lg text-gray-500">Loading cart...</p>
-      </div>
-    );
-  }
+  const totalAmount = cartItems.reduce(
+    (sum, item) => sum + item.rate * (item.quantity || 1),
+    0
+  );
+
+  const LoadingUI = () => (
+    <div className="h-screen bg-gray-50 flex flex-col items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mb-4" />
+      <p className="text-lg text-gray-500">Loading cart...</p>
+    </div>
+  );
+
+  if (loading) return <LoadingUI />;
 
   if (cartItems.length === 0) {
     return (
@@ -97,21 +104,23 @@ export default function ShoppingCart() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-10 flex flex-col items-center">
+    <div className="min-h-screen bg-gray-50 px-4 sm:px-6 py-10 flex flex-col items-center">
       <div className="w-full max-w-4xl space-y-6">
+        <h1 className="text-3xl font-bold text-gray-800 text-center mb-6">Your Shopping Cart</h1>
+
         {cartItems.map((item) => (
           <div
             key={item.id}
-            className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+            className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition duration-300 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 border"
           >
             <div
               onClick={() => handleProductClick(item.product_id)}
-              className="flex items-center gap-6 cursor-pointer"
+              className="flex items-center gap-6 cursor-pointer w-full sm:w-auto"
             >
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-28 h-28 object-contain rounded-lg"
+                className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg border"
               />
               <div>
                 <p className="font-semibold text-xl text-gray-800">{item.name}</p>
@@ -120,14 +129,45 @@ export default function ShoppingCart() {
               </div>
             </div>
 
-            <button
-              onClick={() => handleRemove(item.id)}
-              className="self-start sm:self-auto bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all duration-200"
-            >
-              Remove
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleQuantityChange(item.id, -1)}
+                className="text-xl w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full text-gray-800"
+              >
+                -
+              </button>
+              <span className="font-semibold text-lg text-gray-800">
+                {item.quantity || 1}
+              </span>
+              <button
+                onClick={() => handleQuantityChange(item.id, 1)}
+                className="text-xl w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full text-gray-800"
+              >
+                +
+              </button>
+            </div>
           </div>
         ))}
+
+        {/* Summary Section */}
+        <div className="bg-white rounded-2xl shadow-md p-6 mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border">
+          <div>
+            <p className="text-xl text-gray-800 font-medium">
+              Total Items: <span className="font-bold">{cartItems.length}</span>
+            </p>
+            <p className="text-xl text-gray-800 font-medium mt-1">
+              Total Amount:{' '}
+              <span className="font-bold text-green-600">₹{totalAmount}</span>
+            </p>
+          </div>
+
+          <button
+            onClick={handleBuyAll}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-lg transition"
+          >
+            Buy All
+          </button>
+        </div>
       </div>
     </div>
   );

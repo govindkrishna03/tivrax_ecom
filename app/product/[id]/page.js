@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import toast from "react-hot-toast";
+import Loading from "../../../components/Loading"; // 🔁 Update path as needed
 
 const ProductDescriptionPage = () => {
   const { id, link } = useParams();
@@ -17,7 +18,6 @@ const ProductDescriptionPage = () => {
   const [currentUrl, setCurrentUrl] = useState("");
   const [user, setUser] = useState(null);
 
-  // Set current URL and fetch product on load
   useEffect(() => {
     setCurrentUrl(window.location.href);
 
@@ -37,7 +37,6 @@ const ProductDescriptionPage = () => {
     fetchProductData();
   }, [id]);
 
-  // Fetch user info
   useEffect(() => {
     const getUser = async () => {
       const {
@@ -69,9 +68,7 @@ const ProductDescriptionPage = () => {
     }
 
     if (!selectedSize) {
-      toast("Please select a size before proceeding.", {
-        icon: "👕",
-      });
+      toast("Please select a size before proceeding.", { icon: "👕" });
       return;
     }
 
@@ -80,8 +77,9 @@ const ProductDescriptionPage = () => {
     );
   };
 
+  // ⏳ Show Loading screen
   if (loading) {
-    return <p className="text-center text-lg text-gray-600 mt-12">Loading product...</p>;
+    return <Loading />;
   }
 
   if (!product) {

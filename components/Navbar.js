@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { supabase } from "../lib/supabase"; 
+import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {
@@ -25,7 +25,7 @@ export default function Navbar() {
         setUser(session.user);
       }
   
-      const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
           setUser(session.user);
         } else {
@@ -33,21 +33,20 @@ export default function Navbar() {
         }
       });
   
-      // Cleanup function
       return () => {
-        subscription?.unsubscribe();
+        // correct way to unsubscribe
+        listener?.subscription?.unsubscribe?.();
       };
     };
   
-    const unsubscribe = getSessionAndListen();
+    const cleanupPromise = getSessionAndListen();
   
     return () => {
-      // Ensure cleanup if getSessionAndListen resolves later
-      unsubscribe?.then((fn) => fn?.());
+      cleanupPromise.then((cleanupFn) => cleanupFn?.());
     };
   }, []);
   
-  
+
   const handleProfileClick = () => {
     if (user) {
       router.push("/profile");
@@ -98,52 +97,60 @@ export default function Navbar() {
         </Link>
 
         {/* Profile Dropdown */}
-        <div className="relative flex items-center" ref={dropdownRef}>
-          <button onClick={toggleDropdown} className="focus:outline-none">
-            <Image src="/icons/user.png" alt="Profile" width={30} height={30} className="object-contain hover:scale-110 transition-transform duration-200" />
+        <div className="relative flex items-center justify-center" ref={dropdownRef}>
+  <button onClick={toggleDropdown} className="focus:outline-none">
+    <Image
+      src="/icons/user.png"
+      alt="Profile"
+      width={30}
+      height={30}
+      className="object-contain hover:scale-110 transition-transform duration-200"
+    />
+  </button>
+
+  {showDropdown && (
+    <div className="absolute right-0 top-10 w-40 bg-white shadow-xl rounded-xl z-50 flex flex-col gap-3 px-4 py-5">
+      {user ? (
+        <>
+          <button
+            onClick={handleProfileClick}
+            className="text-left hover:bg-gray-100 rounded-md px-3 py-2 font-medium transition-colors"
+          >
+            Profile
           </button>
 
-          {showDropdown && (
-            <div className="absolute right-0 mt-30 w-36 bg-white shadow-lg rounded-md text-sm z-50">
-              {user ? (
-                <>
-                  <button
-                    onClick={handleProfileClick}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold"
-                  >
-                    Profile
-                  </button>
+          <Link
+            href="/orders"
+            className="text-left hover:bg-gray-100 rounded-md px-3 py-2 font-medium transition-colors"
+          >
+            Orders
+          </Link>
 
-                  <Link
-                    href="/orders"
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold"
-                  >
-                    Orders
-                  </Link>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              setUser(null);
+              setShowDropdown(false);
+              router.push("/");
+            }}
+            className="text-left hover:bg-gray-100 rounded-md px-3 py-2 font-medium text-red-600 transition-colors"
+          >
+            Logout
+          </button>
+        </>
+      ) : (
+        <Link
+          href="/auth/signin"
+          className="text-left hover:bg-gray-100 rounded-md px-3 py-2 font-medium transition-colors"
+        >
+          Login / Sign Up
+        </Link>
+      )}
+    </div>
+  )}
+</div>
 
-                  <button
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      setUser(null);
-                      setShowDropdown(false);
-                      router.push("/");
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold text-red-600"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <Link
-                  href="/auth/signin"
-                  className="block px-4 py-2 hover:bg-gray-100 font-semibold"
-                >
-                  Login / Sign Up
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
+
       </div>
 
       {/* Toast Notification */}
