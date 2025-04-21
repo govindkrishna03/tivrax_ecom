@@ -1,7 +1,7 @@
 'use client';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
-import { supabase } from '../../lib/supabase'; // Make sure supabase client is configured
+import { supabase } from '../../lib/supabase';
 
 const PaymentPage = () => {
   const searchParams = useSearchParams();
@@ -13,18 +13,18 @@ const PaymentPage = () => {
   const [userEmail, setUserEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get product data from URL
-  const productName = searchParams.get('name');
-  const productPrice = parseFloat(searchParams.get('price'));
-  const productSize = searchParams.get('size');
-  const productImg = searchParams.get('img');
-  const address = searchParams.get('address');
-  const phone = searchParams.get('phone');
-  const pincode = searchParams.get('pincode');
+  // Get product data from URL (with fallback values)
+  const productName = searchParams.get('name') || 'Unknown Product';
+  const productPrice = parseFloat(searchParams.get('price')) || 0;
+  const productSize = searchParams.get('size') || 'N/A';
+  const productImg = searchParams.get('img') || '/default-product-image.jpg';
+  const address = searchParams.get('address') || 'No address provided';
+  const phone = searchParams.get('phone') || 'N/A';
+  const pincode = searchParams.get('pincode') || '000000';
   const productId = searchParams.get('id') || 'default-id';
 
   const upiId = 'tivrax@bank';
-  const upiLink = `upi://pay?pa=${upiId}&pn=Tivrax&mc=0000&tid=1234567890&tr=1234567890&tn=Order%20Payment%20for%20${productName}&am=${productPrice?.toFixed(2)}&cu=INR`;
+  const upiLink = `upi://pay?pa=${upiId}&pn=Tivrax&mc=0000&tid=1234567890&tr=1234567890&tn=Order%20Payment%20for%20${productName}&am=${productPrice.toFixed(2)}&cu=INR`;
 
   // Fetch logged-in user from Supabase
   useEffect(() => {
@@ -35,6 +35,7 @@ const PaymentPage = () => {
         setUserEmail(user.email || '');
       } else {
         console.error('User not authenticated', error?.message);
+        router.push('/login'); // Redirect if not authenticated
       }
     };
 
@@ -48,7 +49,6 @@ const PaymentPage = () => {
     }
 
     if (isSubmitting) return;
-
     setIsSubmitting(true);
 
     try {
@@ -93,14 +93,15 @@ const PaymentPage = () => {
         {/* Product Summary */}
         <div className="flex flex-col sm:flex-row gap-6 items-center mb-10 border p-4 rounded-lg">
           <img
-            src={productImg || "/default-product-image.jpg"}
-            alt={productName || 'Product'}
+            src={productImg}
+            alt={productName}
             className="w-32 h-32 object-cover rounded-xl border"
           />
           <div>
             <h2 className="text-xl font-semibold">{productName}</h2>
             <p className="text-gray-600">Size: {productSize}</p>
             <p className="text-lg font-bold text-green-700 mt-1">₹{productPrice}</p>
+            <p className="text-sm text-gray-500 mt-1">Your Email: {userEmail}</p>
           </div>
         </div>
 
@@ -181,7 +182,7 @@ const PaymentPage = () => {
   );
 };
 
-// Wrap with Suspense for Next.js 15.3
+// Wrap with Suspense for Next.js 15.3+
 export default function PaymentPageWrapper() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
