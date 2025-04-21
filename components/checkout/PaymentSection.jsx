@@ -59,8 +59,8 @@ export default function PaymentSection({
     };
 
     const handlePayByUPI = () => {
-        const upiId = "govindkrishna28@oksbi";
-        const upiUrl = `upi://pay?pa=${upiId}&pn=Govind%20Krishna&mc=XXXXXX&tid=XXXXXX&url=XXX&am=${amount}`;
+        const upiId = process.env.NEXT_PUBLIC_UPI_ID;
+        const upiUrl = `upi://pay?pa=${upiId}&pn=Praveen&mc=XXXXXX&tid=XXXXXX&url=XXX&am=${amount}`;
         setHasPaidByUPI(true);
         window.location.href = upiUrl;
     };

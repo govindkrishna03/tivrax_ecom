@@ -27,10 +27,17 @@ export default function ShoppingCart() {
           .select('*')
           .eq('user_id', userId);
 
-        if (error) console.error('Error fetching cart items:', error);
-        setCartItems(cart || []);
+        if (error) {
+          console.error('Error fetching cart items:', error);
+        } else {
+          const updatedCart = (cart || []).map(item => ({
+            ...item,
+            quantity: item.quantity || 1,
+          }));
+          setCartItems(updatedCart);
+        }
       } catch (err) {
-        console.error('Error fetching cart:', err);
+        console.error('Unexpected error:', err);
       } finally {
         setLoading(false);
       }
@@ -41,11 +48,10 @@ export default function ShoppingCart() {
 
   const handleQuantityChange = async (id, delta) => {
     const currentItem = cartItems.find(item => item.id === id);
-  
     if (!currentItem) return;
-  
+
     const newQty = (currentItem.quantity || 1) + delta;
-  
+
     if (newQty <= 0) {
       const { error } = await supabase.from('cart').delete().eq('id', id);
       if (!error) {
@@ -56,7 +62,7 @@ export default function ShoppingCart() {
         .from('cart')
         .update({ quantity: newQty })
         .eq('id', id);
-  
+
       if (!error) {
         setCartItems(prevItems =>
           prevItems.map(item =>
@@ -66,11 +72,12 @@ export default function ShoppingCart() {
       }
     }
   };
-  
 
   const handleProductClick = (id) => router.push(`/product/${id}`);
+
   const handleBuyAll = () => {
     alert('Redirect to payment or WhatsApp with full cart');
+    // Optional: router.push('/checkout')
   };
 
   const totalAmount = cartItems.reduce(

@@ -2,34 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Import the styles
-import { supabase } from './../lib/supabase'; // Import Supabase client
+import { supabase } from './../lib/supabase';
 
 const ProductCard = ({ id, name, rate, size, image }) => {
   const [cartItems, setCartItems] = useState([]);
-  const [userId, setUserId] = useState(null); // Store user ID
-  const router = useRouter(); // For navigation on click
+  const [userId, setUserId] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
-    // Subscribe to authentication state changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        setUserId(session.user.id); // Set user ID from session
+        setUserId(session.user.id);
       } else {
-        setUserId(null); // No user logged in
+        setUserId(null);
       }
     });
 
-    // Clean up the listener on component unmount
     return () => {
       if (authListener) {
-        authListener.subscription.unsubscribe();  // Correct way to unsubscribe
+        authListener.subscription.unsubscribe();
       }
     };
   }, []);
 
-  // Fetch cart items from Supabase
   const fetchCartItems = async () => {
     if (userId) {
       const { data, error } = await supabase
@@ -37,50 +32,66 @@ const ProductCard = ({ id, name, rate, size, image }) => {
         .select('*')
         .eq('user_id', userId);
 
-      if (error) {
-        console.error("Error fetching cart:", error.message);
-      } else {
+      if (!error) {
         setCartItems(data || []);
       }
     }
   };
 
- // Handle adding product to cart
-const handleAddToCart = async () => {
-  if (!userId) {
-    toast.error('You must be logged in to add items to the cart');
-    return;
-  }
-  const newProduct = { 
-    product_id: id, // change from `id` to `product_id`
-    name, 
-    rate, 
-    size, 
-    image,
-    user_id: userId 
-  };
-  
-  // Check if the product is already in the cart
-  const isAlreadyInCart = cartItems.some(item => item.id === id);
-
-  if (!isAlreadyInCart) {
-    const { error } = await supabase
-    .from('cart')
-    .insert([newProduct]);
-  
-
-    if (error) {
-      toast.error('Error adding to cart!');
-      console.error('Error adding to cart:', error.message);
-    } else {
-      fetchCartItems(); // Refresh cart state
-      toast.success('Added to cart!');
+  const showNotification = (message) => {
+    // Check if browser supports notifications
+    if ('Notification' in window) {
+      // Request permission if not already granted
+      if (Notification.permission === 'granted') {
+        new Notification(message);
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification(message);
+          }
+        });
+      }
     }
-  } else {
-    toast.warn('Already in cart!');
-  }
-};
+    
+    // Fallback to alert if notifications not supported
+    if (!('Notification' in window)) {
+      alert(message);
+    }
+  };
 
+  const handleAddToCart = async (e) => {
+    e.stopPropagation();
+    
+    if (!userId) {
+      alert('Please login to add items to cart');
+      return;
+    }
+
+    const newProduct = {
+      product_id: id,
+      name,
+      rate,
+      size,
+      image,
+      user_id: userId,
+      quantity: 1
+    };
+
+    const isAlreadyInCart = cartItems.some(item => item.product_id === id);
+
+    if (!isAlreadyInCart) {
+      const { error } = await supabase.from('cart').insert([newProduct]);
+
+      if (!error) {
+        fetchCartItems();
+        showNotification(`${name} added to cart successfully!`);
+      } else {
+        console.log('Error adding item to cart:', error.message);
+      }
+    } else {
+      showNotification(`${name} is already in your cart`);
+    }
+  };
 
   const handleProductClick = () => {
     router.push(`/product/${id}`);
@@ -88,7 +99,7 @@ const handleAddToCart = async () => {
 
   useEffect(() => {
     if (userId) {
-      fetchCartItems(); // Fetch cart items after user ID is set
+      fetchCartItems();
     }
   }, [userId]);
 
@@ -99,16 +110,15 @@ const handleAddToCart = async () => {
       className="w-full max-w-sm sm:h-[400px] mb-10 bg-white rounded-lg shadow-lg hover:scale-105 hover:shadow-2xl transition-transform transform flex flex-col justify-between relative overflow-hidden"
       onClick={handleProductClick}
     >
-      {/* Product Image */}
       <div className="w-full h-48 p-5 flex justify-center items-center">
         <img
           className="object-contain max-w-full max-h-full transition-all duration-300 transform hover:scale-110"
           src={image}
           alt={name}
+          onError={(e) => e.target.src = '/placeholder-product.png'}
         />
       </div>
 
-      {/* Product Details */}
       <div className="px-5 pb-5 flex flex-col items-center justify-center z-10">
         <h3 className="text-sm sm:text-xl font-semibold text-black text-center cursor-pointer hover:underline">
           {name}
@@ -118,28 +128,13 @@ const handleAddToCart = async () => {
           ₹{rate}
         </span>
 
-        {/* Add to Cart Button */}
         <button
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering the product click event
-            handleAddToCart();
-          }}
+          onClick={handleAddToCart}
           className="sm:w-[50%] text-white bg-black transform hover:scale-110 transition-all duration-300 font-medium rounded-4xl text-sm px-5 py-2.5 mt-3 shadow-md hover:shadow-lg"
         >
           Add to cart
         </button>
       </div>
-<ToastContainer
-  position="top-center"
-  autoClose={3000}              // Toast disappears after 3 seconds
-  hideProgressBar={false}       // Show a visual progress bar
-  closeOnClick={true}           // Close on click
-  pauseOnHover={true}           // Pause dismiss on hover
-  draggable={true}              // Allow drag to dismiss
-  theme="light"                 // Or use "dark" or "colored"
-  newestOnTop={true}            // Show newest toast first
-/>
-
     </div>
   );
 };
