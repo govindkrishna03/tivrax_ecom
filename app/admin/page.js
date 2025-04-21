@@ -118,7 +118,7 @@ const AdminPage = () => {
                     <td className="px-4 py-3">{order.product_id}</td>
                     <td className="px-4 py-3">{order.product_name}</td>
                     <td className="px-4 py-3">{order.email}</td>
-                    <td className="px-4 py-3">₹{order.price}</td>
+                    <td className="px-4 py-3">₹{order.total_price}</td>
                     <td className="px-4 py-3">{order.size}</td>
                     <td className="px-4 py-3">{order.payment_method}</td>
                     <td className="px-4 py-3">{order.shipping_address}</td>
