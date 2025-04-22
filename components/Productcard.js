@@ -10,7 +10,19 @@ const ProductCard = ({ id, name, rate, size, image }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const getUser = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    };
+
+    getUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUserId(session.user.id);
       } else {
@@ -19,9 +31,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
     });
 
     return () => {
-      if (authListener) {
-        authListener.subscription.unsubscribe();
-      }
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 
@@ -39,9 +49,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
   };
 
   const showNotification = (message) => {
-    // Check if browser supports notifications
     if ('Notification' in window) {
-      // Request permission if not already granted
       if (Notification.permission === 'granted') {
         new Notification(message);
       } else if (Notification.permission !== 'denied') {
@@ -51,56 +59,55 @@ const ProductCard = ({ id, name, rate, size, image }) => {
           }
         });
       }
-    }
-    
-    // Fallback to alert if notifications not supported
-    if (!('Notification' in window)) {
+    } else {
       alert(message);
     }
   };
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
-    
+  
     if (!userId) {
       alert('Please login to add items to cart');
       return;
     }
-
-    const newProduct = {
-      product_id: id,
-      name,
-      rate,
-      size,
-      image,
-      user_id: userId,
-      quantity: 1
-    };
-
-    const isAlreadyInCart = cartItems.some(item => item.product_id === id);
-
-    if (!isAlreadyInCart) {
-      const { error } = await supabase.from('cart').insert([newProduct]);
-
-      if (!error) {
-        fetchCartItems();
-        showNotification(`${name} added to cart successfully!`);
-      } else {
-        console.log('Error adding item to cart:', error.message);
-      }
-    } else {
-      showNotification(`${name} is already in your cart`);
+  
+    // Debugging the size value
+    console.log('Selected size:', size);
+  
+    const isAlreadyInCart = cartItems.some(
+      item => item.product_id === id && item.size === size
+    );
+  
+    if (isAlreadyInCart) {
+      showNotification(`${name} (Size ${size}) is already in your cart`);
+      return;
     }
+  
+    const { error } = await supabase.from('cart').insert([
+      {
+        user_id: userId,
+        product_id: id,
+        size: size,
+        quantity: 1,
+      }
+    ]);
+    
+    if (!error) {
+      fetchCartItems();
+      showNotification(`${name} (Size ${size}) added to cart successfully!`);
+    } else {
+      console.error('Error adding to cart:', error.message);
+    }
+    
   };
-
+  
   const handleProductClick = () => {
     router.push(`/product/${id}`);
   };
 
   useEffect(() => {
-    if (userId) {
-      fetchCartItems();
-    }
+    if (userId) fetchCartItems();
   }, [userId]);
 
   if (!id) return null;
@@ -115,7 +122,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
           className="object-contain max-w-full max-h-full transition-all duration-300 transform hover:scale-110"
           src={image}
           alt={name}
-          onError={(e) => e.target.src = '/placeholder-product.png'}
+          onError={(e) => e.target.src = '/placeholder.png'}
         />
       </div>
 

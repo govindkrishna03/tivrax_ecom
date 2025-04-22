@@ -1,18 +1,18 @@
 import HeroCarousel from "../components/Carousel";
 import ProductCard from "../components/Productcard";
 import CategoryDropdown from "../components/CategoryDropdown";
-import { getProductData } from "../lib/readExcell";
+import { getProductData } from "../lib/getProductData";
 
 export default async function Home() {
   let products = [];
 
   try {
-    products = getProductData(); // If it's not async. If async, await it.
+    products = await getProductData(); // now async!
   } catch (error) {
     console.error("Failed to load product data:", error);
   }
 
-  const filteredProducts = products?.filter((product) => product.P_ID) || [];
+  const filteredProducts = products?.filter((product) => product.id) || [];
 
   return (
     <>
@@ -23,12 +23,12 @@ export default async function Home() {
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
             <ProductCard
-              key={product.P_ID}
-              id={product.P_ID}
-              name={product.P_Name}
-              size={product.Size}
-              rate={product.Rate}
-              image={product.P_Image}
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              size={product.product_sizes?.map(s => s.size).join(', ') || 'No sizes available'} // Show all available sizes or fallback
+              rate={product.price}
+              image={product.image_url || '/placeholder.png'} // Default image if no image is available
             />
           ))
         ) : (

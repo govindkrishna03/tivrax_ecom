@@ -7,10 +7,11 @@ import toast from "react-hot-toast";
 import Loading from "../../../components/Loading"; // 🔁 Update path as needed
 
 const ProductDescriptionPage = () => {
-  const { id, link } = useParams();
+  const { id } = useParams();  // Using the product id from URL params
   const router = useRouter();
 
   const [product, setProduct] = useState(null);
+  const [sizes, setSizes] = useState([]);  // To store available sizes
   const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState("");
   const [deliveryAvailable, setDeliveryAvailable] = useState(null);
@@ -23,12 +24,34 @@ const ProductDescriptionPage = () => {
 
     const fetchProductData = async () => {
       try {
-        const response = await fetch(`/api/product`);
-        const data = await response.json();
-        const foundProduct = data.find((p) => p.P_ID.toString() === id);
-        setProduct(foundProduct || null);
+        // Fetch product details
+        const { data: productData, error: productError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (productError) {
+          throw productError;
+        }
+
+        setProduct(productData);
+
+        // Fetch product sizes
+        const { data: sizesData, error: sizesError } = await supabase
+          .from('product_sizes')
+          .select('*')
+          .eq('product_id', id);
+
+        if (sizesError) {
+          throw sizesError;
+        }
+
+        setSizes(sizesData);
+
       } catch (error) {
-        console.error("Error fetching product:", error);
+        console.error("Error fetching product data:", error);
+        toast.error("Failed to load product data.");
       } finally {
         setLoading(false);
       }
@@ -56,10 +79,16 @@ const ProductDescriptionPage = () => {
     };
   }, []);
 
-  const handlePincodeCheck = () => {
-    const availablePincodes = ["110001", "110002", "110003", "110004"];
-    setDeliveryAvailable(availablePincodes.includes(pincode));
-  };
+  // const handlePincodeCheck = () => {
+  //   if (!/^[1-9][0-9]{5}$/.test(pincode)) {
+  //     toast.error("Invalid pincode. Please enter a valid 6-digit pincode.");
+  //     setDeliveryAvailable(null);
+  //     return;
+  //   }
+
+  //   const availablePincodes = ["110001", "110002", "110003", "110004"];
+  //   setDeliveryAvailable(availablePincodes.includes(pincode));
+  // };
 
   const handleBuyNow = () => {
     if (!user) {
@@ -73,7 +102,7 @@ const ProductDescriptionPage = () => {
     }
 
     router.push(
-      `/checkout?name=${encodeURIComponent(product.P_Name)}&price=${product.Rate}&size=${selectedSize}&img=${encodeURIComponent(product.P_Image)}&productId=${product.P_ID}&productLink=${encodeURIComponent(currentUrl)}`
+      `/checkout?name=${encodeURIComponent(product.name)}&price=${product.price}&size=${selectedSize}&img=${encodeURIComponent(product.image_url)}&productId=${product.id}&productLink=${encodeURIComponent(currentUrl)}`
     );
   };
 
@@ -91,45 +120,45 @@ const ProductDescriptionPage = () => {
       <div className="flex flex-col lg:flex-row bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-200">
         <div className="lg:w-1/2 w-full p-8 bg-gray-50 flex items-center justify-center">
           <img
-            src={product.P_Image}
-            alt={product.P_Name}
+            src={product.image_url}
+            alt={product.name}
             className="object-contain h-[400px] w-full rounded-lg"
           />
         </div>
 
         <div className="lg:w-1/2 w-full p-8 flex flex-col justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">{product.P_Name}</h1>
-            <p className="text-gray-500 text-lg mt-2">{product.Category}</p>
+            <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
+            <p className="text-gray-500 text-lg mt-2">{product.category}</p>
 
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2 text-gray-700">Select Size</h3>
               <div className="flex gap-4 flex-wrap">
-                {(Array.isArray(product.Size) ? product.Size : product.Size?.split(','))?.map((size, index) => (
+                {sizes?.map((size) => (
                   <button
-                    key={index}
-                    onClick={() => setSelectedSize(size)}
+                    key={size.id}
+                    onClick={() => setSelectedSize(size.size)}
                     className={`w-12 h-12 rounded-full border-2 flex items-center justify-center
                       font-medium transition-all duration-200
-                      ${selectedSize === size
+                      ${selectedSize === size.size
                         ? "bg-black text-white border-black"
                         : "bg-white text-black border-gray-300 hover:border-black"}`}
                   >
-                    {size.trim()}
+                    {size.size}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="mt-6">
-              <p className="text-3xl font-bold text-gray-800">₹{product.Rate}</p>
+              <p className="text-3xl font-bold text-gray-800">₹{product.price}</p>
             </div>
 
             <div className="mt-6">
               <h4 className="text-md font-semibold mb-1 text-gray-700">Product Description</h4>
-              <p className="text-gray-600 leading-relaxed">{product.Description}</p>
+              <p className="text-gray-600 leading-relaxed">{product.description}</p>
             </div>
-
+{/* 
             <div className="mt-8">
               <h4 className="text-md font-semibold mb-2 text-gray-700">Check Delivery</h4>
               <div className="flex gap-3 flex-col sm:flex-row">
@@ -154,7 +183,7 @@ const ProductDescriptionPage = () => {
                     : "❌ Sorry, we don't deliver to this pincode."}
                 </p>
               )}
-            </div>
+            </div> */}
           </div>
 
           <div className="mt-10">

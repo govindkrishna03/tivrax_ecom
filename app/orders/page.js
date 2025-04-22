@@ -3,10 +3,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle, AlertCircle, XCircle } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  PackageCheck,
+} from "lucide-react";
 import Loading from "../../components/Loading";
-
-
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -16,14 +20,13 @@ export default function Orders() {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      // Get session (safer than getUser)
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession();
 
       if (sessionError || !session?.user) {
-        router.push("/login"); // redirect if no session
+        router.push("/signin");
         return;
       }
 
@@ -31,7 +34,26 @@ export default function Orders() {
 
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select(`
+          id,
+          user_id,
+          product_id,
+          quantity,
+          total_price,
+          order_status,
+          phone_number,
+          email,
+          shipping_address,
+          created_at,
+          updated_at,
+          products:product_id (
+            id,
+            name,
+            price,
+            image_url,
+            description
+          )
+        `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -47,77 +69,105 @@ export default function Orders() {
     fetchOrders();
   }, [router]);
 
- 
-  if (loading) {
-    return <Loading />;
-  }
+  if (loading) return <Loading />;
 
   return (
-    <div className="min-h-screen flex flex-col">
-    <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded-xl shadow-md flex-1">
-        <h2 className="text-2xl font-bold text-center mb-6">Your Orders</h2>
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="max-w-3xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">
+          <PackageCheck className="inline mr-2" size={28} />
+          Your Orders
+        </h2>
 
         {errorMessage && (
           <div className="text-red-500 text-center mb-4">{errorMessage}</div>
         )}
 
         {orders.length === 0 ? (
-          <div className="text-center text-gray-500">You have no orders yet.</div>
+          <div className="text-center text-gray-500 text-lg">
+            You haven’t placed any orders yet.
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {orders.map((order) => (
               <div
                 key={order.id}
-                className="border p-6 rounded-lg shadow-md hover:shadow-lg transition-all"
+                className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-2">
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-800">
-                      {order.product_name}
+                    <h3 className="text-lg font-semibold text-gray-700">
+                      Order #{order.id}
                     </h3>
-                    <p className="text-sm text-gray-500">
-                      {new Date(order.created_at).toLocaleString()}
+                    <p className="text-xs text-gray-400">
+                      Placed on:{" "}
+                      {new Date(order.created_at).toLocaleDateString()} at{" "}
+                      {new Date(order.created_at).toLocaleTimeString()}
                     </p>
                   </div>
                   <div>
-                    {/* Status Handling */}
                     <p
-                      className={`text-sm flex items-center ${
-                        order.payment_status === "Success"
-                          ? "text-green-500"
-                          : order.payment_status === "Failed"
-                          ? "text-red-500"
-                          : "text-yellow-500"
+                      className={`flex items-center text-sm font-medium ${
+                        order.order_status === "Success"
+                          ? "text-green-600"
+                          : order.order_status === "Failed"
+                          ? "text-red-600"
+                          : "text-yellow-600"
                       }`}
                     >
-                      {order.payment_status === "Success" ? (
+                      {order.order_status === "Success" ? (
                         <>
-                          <CheckCircle className="inline-block mr-2" size={18} />
-                          <span>Order Successfully Placed</span>
+                          <CheckCircle size={18} className="mr-1" />
+                          Placed
                         </>
-                      ) : order.payment_status === "Failed" ? (
+                      ) : order.order_status === "Failed" ? (
                         <>
-                          <AlertCircle className="inline-block mr-2" size={18} />
-                          <span>Order Not Placed</span>
+                          <AlertCircle size={18} className="mr-1" />
+                          Failed
                         </>
                       ) : (
                         <>
-                          <XCircle className="inline-block mr-2" size={18} />
-                          <span>Confirmation Pending</span>
+                          <XCircle size={18} className="mr-1" />
+                          Pending
                         </>
                       )}
                     </p>
                   </div>
                 </div>
 
-                {/* More Details */}
-                <div className="mt-4 text-sm text-gray-600">
-                  <p>
-                    <strong>Payment Status:</strong> {order.payment_status}
-                  </p>
-                  <p>
-                    <strong>Total Price:</strong> ₹{order.price}
-                  </p>
+                <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                  {order.products?.image_url && (
+                    <img
+                      src={order.products.image_url}
+                      alt={order.products.name}
+                      className="h-32 w-32 object-contain rounded-md border"
+                    />
+                  )}
+
+                  <div className="flex-1 text-sm text-gray-600 space-y-2">
+                    <p>
+                      <strong className="text-gray-700">Product:</strong>{" "}
+                      {order.products?.name || "Not Found"}
+                    </p>
+                    <p>
+                      <strong className="text-gray-700">Description:</strong>{" "}
+                      {order.products?.description || "—"}
+                    </p>
+                    <p>
+                      <strong className="text-gray-700">Quantity:</strong>{" "}
+                      {order.quantity}
+                    </p>
+                    <p>
+                      <strong className="text-gray-700">Total Price:</strong>{" "}
+                      ₹{order.total_price}
+                    </p>
+                    <p>
+                      <strong className="text-gray-700">
+                        Shipping Address:
+                      </strong>{" "}
+                      {order.shipping_address}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}

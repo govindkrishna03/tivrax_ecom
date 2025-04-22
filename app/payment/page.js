@@ -1,6 +1,6 @@
 'use client';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 
 const PaymentPage = () => {
@@ -11,6 +11,7 @@ const PaymentPage = () => {
   const [orderConfirmed, setOrderConfirmed] = useState(false);
   const [userId, setUserId] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [userPhone, setUserPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get product data from URL (with fallback values)
@@ -19,7 +20,6 @@ const PaymentPage = () => {
   const productSize = searchParams.get('size') || 'N/A';
   const productImg = searchParams.get('img') || '/default-product-image.jpg';
   const address = searchParams.get('address') || 'No address provided';
-  const phone = searchParams.get('phone') || 'N/A';
   const pincode = searchParams.get('pincode') || '000000';
   const productId = searchParams.get('id') || 'default-id';
 
@@ -33,6 +33,19 @@ const PaymentPage = () => {
       if (user) {
         setUserId(user.id);
         setUserEmail(user.email || '');
+
+        // Fetch phone number from user's profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')  // Assuming user profile table is 'profiles'
+          .select('phone')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError.message);
+        } else {
+          setUserPhone(profile?.phone || 'N/A');
+        }
       } else {
         console.error('User not authenticated', error?.message);
         router.push('/login'); // Redirect if not authenticated
@@ -47,33 +60,43 @@ const PaymentPage = () => {
       alert('Please select a payment method!');
       return;
     }
-
+  
     if (isSubmitting) return;
     setIsSubmitting(true);
-
+  
+    // Calculate the total price (if there's more than one item, multiply price by quantity)
+    const totalPrice = productPrice;
+  
     try {
-      const { data, error } = await supabase.from('orders').insert([
+      // 1. Insert order data into 'orders' table
+      const { data: orderData, error: orderError } = await supabase.from('orders').insert([
         {
-          product_id: productId,
-          product_name: productName,
-          price: productPrice,
-          size: productSize,
-          address,
-          phone,
-          pincode,
           user_id: userId,
-          email: userEmail,
-          payment_method: paymentMethod,
-          payment_status: 'Pending',
+          status: 'Confirmation Pending',  // Default status
+          total: totalPrice,
           created_at: new Date().toISOString(),
         },
+      ]).single();  // Insert and fetch the inserted order row
+  
+      if (orderError) throw orderError;
+  
+      // 2. Insert order items into 'order_items' table
+      const { data: orderItemsData, error: orderItemsError } = await supabase.from('order_items').insert([
+        {
+          order_id: orderData.id,  // Use the 'id' from the order just inserted as the order_id in order_items
+          product_id: productId,   // Product ID
+          size: productSize,       // Product size
+          quantity: 1,             // Assuming 1 quantity per order (adjust if needed)
+          price: productPrice,     // Product price
+        },
       ]);
-
-      if (error) throw error;
-
-      console.log('Order inserted:', data);
+  
+      if (orderItemsError) throw orderItemsError;
+  
+      console.log('Order and order items inserted:', orderData, orderItemsData);
+  
       setOrderConfirmed(true);
-
+  
       // Redirect to home after 3 seconds
       setTimeout(() => {
         router.push('/');
@@ -84,6 +107,7 @@ const PaymentPage = () => {
       setIsSubmitting(false);
     }
   };
+  
 
   return (
     <div className="container mx-auto px-4 py-12 relative">
@@ -102,13 +126,13 @@ const PaymentPage = () => {
             <p className="text-gray-600">Size: {productSize}</p>
             <p className="text-lg font-bold text-green-700 mt-1">₹{productPrice}</p>
             <p className="text-sm text-gray-500 mt-1">Your Email: {userEmail}</p>
+            <p className="text-sm text-gray-500 mt-1">Your Phone: {userPhone}</p>
           </div>
         </div>
 
         {/* Shipping Info */}
         <div className="bg-gray-50 border rounded-lg p-4 mb-10 text-sm text-gray-700 space-y-2">
           <p><strong>Shipping Address:</strong> {address}</p>
-          <p><strong>Phone:</strong> {phone}</p>
           <p><strong>Pincode:</strong> {pincode}</p>
         </div>
 
