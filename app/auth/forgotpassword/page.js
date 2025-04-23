@@ -1,4 +1,3 @@
-// pages/auth/forgot-password.js
 "use client";
 import { useState } from "react";
 import { supabase } from "../../../lib/supabase";
@@ -15,9 +14,13 @@ export default function ForgotPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
+    setMessage("");
 
     try {
-      const { error } = await supabase.auth.api.resetPasswordForEmail(email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      });
 
       if (error) {
         setError(error.message);
@@ -27,7 +30,7 @@ export default function ForgotPassword() {
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
-      console.error("Error:", err);
+      console.error("Unexpected error:", err);
     } finally {
       setLoading(false);
     }
@@ -36,7 +39,7 @@ export default function ForgotPassword() {
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100 p-4">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
-        <div className="mb-6 justify-center items-center flex">
+        <div className="mb-6 flex justify-center">
           <Image
             src="/logo.png"
             alt="Tivrax Logo"
@@ -50,7 +53,7 @@ export default function ForgotPassword() {
         <h2 className="text-2xl font-semibold mb-6">Forgot Password</h2>
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
+          <div className="mb-4 text-left">
             <label htmlFor="email" className="block text-sm font-medium text-gray-600 mb-2">
               Email Address
             </label>

@@ -34,7 +34,7 @@ export default function SignIn() {
   };
 
   const handleForgotPassword = () => {
-    router.push("/auth/forgot-password");
+    router.push("/auth/forgotpassword");
   };
 
   return (
