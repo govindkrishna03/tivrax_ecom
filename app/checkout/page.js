@@ -64,9 +64,12 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentComplete = async (method) => {
-    setPaymentMethod(method); // Set the payment method (e.g., COD, Online)
+    setPaymentMethod(method);
     setIsSubmitting(true);
-  
+
+    const istNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+
+
     try {
       const { data, error } = await supabase
         .from("orders")
@@ -74,49 +77,51 @@ export default function CheckoutPage() {
           {
             user_id: userId,
             product_id: productId,
-            product_name: name,           // Added product name
-            product_size: size,           // Added product size
-            product_link: productLink,    // Added product link
-            product_image: img,           // Added product image
+            product_name: name,
+            product_size: size,
+            product_link: productLink,
+            product_image: img,
             quantity: products[0]?.quantity || 1,
             total_price: totalPrice,
             shipping_address: formData.address,
             phone_number: formData.phone,
             email: formData.email,
             order_status: "Pending",
-            payment_mode: method,         // This stores the payment method selected
+            payment_mode: method,
+            created_at: istNow.toISOString(),
+            updated_at: istNow.toISOString(), // ✅ add this line for IST time
           },
         ])
         .select();
-  
+
       if (error) {
         console.error("Error inserting order:", error.message);
         alert("There was an error confirming your order: " + error.message);
         return;
       }
-  
+
       if (!data || data.length === 0) {
         console.error("No data returned from order insertion.");
         alert("There was an issue with your order. Please try again.");
         return;
       }
-  
+
       console.log("Order confirmed:", data);
-      setOrderId(data[0].id); // Save the order ID
-      setOrderConfirmed(true); // Mark the order as confirmed
-  
+      setOrderId(data[0].id);
+      setOrderConfirmed(true);
+
       setTimeout(() => {
-        router.push("/"); // Redirect after a delay
+        router.push("/");
       }, 3000);
     } catch (err) {
       console.error("Error processing payment:", err);
       alert("There was an issue with payment processing. Please try again.");
     } finally {
-      setIsSubmitting(false); // Stop the submission state
+      setIsSubmitting(false);
     }
   };
-  
-  
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -150,7 +155,7 @@ export default function CheckoutPage() {
               price={price}
               size={size}
               image={img}
-              products={products} // Pass through updated products array
+              products={products} 
               totalPrice={totalPrice}
             />
           </div>

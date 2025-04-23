@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-
+import jsPDF from 'jspdf';
 const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
 const availableSizes = ['S', 'M', 'L', 'XL', 'XXL'];
 
@@ -51,6 +51,45 @@ const AdminPage = () => {
       setEditedProductData(prev => ({ ...prev, style: '' }));
     }
   }, [editedProductData.category]);
+  
+  const handleDownloadBillPDF = async (order) => {
+    try {
+      const billData = {
+        orderId: order.id,
+        date: order.created_at,
+        email: order.email,
+        productId: order.product_id,
+        productName: order.product_name,
+        quantity: order.quantity,
+        totalPrice: order.total_price,
+        paymentMode: order.payment_mode,
+        shippingAddress: order.shipping_address,
+        orderStatus: order.order_status,
+        phoneNumber: order.phone_number,
+        size: order.product_size,
+      };
+      // Convert the date object to a more readable format if needed
+      billData.date = order.created_at.toLocaleString();
+
+      const doc = new jsPDF();
+
+      // Add content to the PDF (adjust spacing and formatting as needed)
+      doc.setFontSize(16);
+      doc.text("Order Bill", 10, 10);
+      doc.setFontSize(12);
+      for (const key in billData) {
+        doc.text(`${key}: ${billData[key]}`, 10, 20 + (Object.keys(billData).indexOf(key) * 10));
+      }
+
+      // Generate PDF filename
+      const filename = `order_${order.id}_bill.pdf`;
+
+      doc.save(filename);
+    } catch (error) {
+      console.error("Error generating or downloading PDF:", error);
+      alert("Error generating PDF bill: " + error.message);
+    }
+  };
 
   const checkAdmin = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -180,6 +219,7 @@ const AdminPage = () => {
       price: 0,
       image_url: '',
       description: '',
+      
     });
     setNewProductSizes([{ size: availableSizes[0], stock: 0 }]); // Reset sizes
     fetchProducts(); // Refresh the product list
@@ -203,12 +243,12 @@ const AdminPage = () => {
 
   const handleEditProduct = (product) => {
     setEditingProduct(product);
-    setEditedProductData({ 
-      name: product.name, 
-      category: product.category || '', 
-      style: product.style || '', 
-      price: product.price, 
-      description: product.description 
+    setEditedProductData({
+      name: product.name,
+      category: product.category || '',
+      style: product.style || '',
+      price: product.price,
+      description: product.description
     });
   };
 
@@ -324,6 +364,9 @@ const AdminPage = () => {
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Order Status</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Phone Number</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Action</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Bill</th>
+                    
+
                     </tr>
                   </thead>
                   <tbody>
@@ -356,6 +399,14 @@ const AdminPage = () => {
                             </button>
                           </div>
                         </td>
+                        <td className="px-4 py-2 text-sm text-gray-700 border-b">
+                        <button
+    onClick={() => handleDownloadBillPDF(order)} // Use the new function
+    className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+  >
+    Download PDF Bill
+  </button>
+                      </td>
                       </tr>
                     ))}
                   </tbody>
@@ -367,223 +418,223 @@ const AdminPage = () => {
 
         {/* Products Tab Content */}
         {selectedTab === 'products' && (
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <div className="mb-6">
-            <button
-              onClick={() => {
-                setEditingProduct({});
-                setEditedProductData({
-                  name: '',
-                  category: '',
-                  style: '',
-                  price: 0,
-                  image_url: '',
-                  description: '',
-                });
-                setNewProductSizes([{ size: availableSizes[0], stock: 0 }]);
-              }}
-              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
-            >
-              Add New Product
-            </button>
-          </div>
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <div className="mb-6">
+              <button
+                onClick={() => {
+                  setEditingProduct({});
+                  setEditedProductData({
+                    name: '',
+                    category: '',
+                    style: '',
+                    price: 0,
+                    image_url: '',
+                    description: '',
+                  });
+                  setNewProductSizes([{ size: availableSizes[0], stock: 0 }]);
+                }}
+                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
+              >
+                Add New Product
+              </button>
+            </div>
 
-          {loading ? (
-            <div className="text-center py-4">Loading products...</div>
-          ) : (
-            <div className="space-y-6">
-              {editingProduct && (
-                <div className="bg-gray-100 p-6 rounded-md shadow-md">
-                  <h2 className="text-xl font-semibold mb-4 text-gray-800">{editingProduct.id ? 'Edit Product' : 'Add New Product'}</h2>
-                  
-                  {/* Product Name */}
-                  <div className="mb-4">
-                    <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">Product Name:</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      placeholder="Product Name"
-                      value={editedProductData.name || ''}
-                      onChange={handleProductInputChange}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                  </div>
+            {loading ? (
+              <div className="text-center py-4">Loading products...</div>
+            ) : (
+              <div className="space-y-6">
+                {editingProduct && (
+                  <div className="bg-gray-100 p-6 rounded-md shadow-md">
+                    <h2 className="text-xl font-semibold mb-4 text-gray-800">{editingProduct.id ? 'Edit Product' : 'Add New Product'}</h2>
 
-                  {/* Category Dropdown */}
-                  <div className="mb-4">
-                    <label htmlFor="category" className="block text-gray-700 text-sm font-bold mb-2">Category:</label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={editedProductData.category || ''}
-                      onChange={handleProductInputChange}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    >
-                      <option value="">Select a category</option>
-                      {Object.keys(productCategories).map(category => (
-                        <option key={category} value={category}>{category}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Style Dropdown (depends on selected category) */}
-                  {editedProductData.category && (
+                    {/* Product Name */}
                     <div className="mb-4">
-                      <label htmlFor="style" className="block text-gray-700 text-sm font-bold mb-2">Style:</label>
+                      <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">Product Name:</label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        placeholder="Product Name"
+                        value={editedProductData.name || ''}
+                        onChange={handleProductInputChange}
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+
+                    {/* Category Dropdown */}
+                    <div className="mb-4">
+                      <label htmlFor="category" className="block text-gray-700 text-sm font-bold mb-2">Category:</label>
                       <select
-                        id="style"
-                        name="style"
-                        value={editedProductData.style || ''}
+                        id="category"
+                        name="category"
+                        value={editedProductData.category || ''}
                         onChange={handleProductInputChange}
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                       >
-                        <option value="">Select a style</option>
-                        {availableStyles.map(style => (
-                          <option key={style} value={style}>{style}</option>
+                        <option value="">Select a category</option>
+                        {Object.keys(productCategories).map(category => (
+                          <option key={category} value={category}>{category}</option>
                         ))}
                       </select>
                     </div>
-                  )}
 
-                  {/* Price */}
-                  <div className="mb-4">
-                    <label htmlFor="price" className="block text-gray-700 text-sm font-bold mb-2">Price:</label>
-                    <input
-                      type="number"
-                      id="price"
-                      name="price"
-                      placeholder="Price"
-                      value={editedProductData.price || ''}
-                      onChange={handleProductInputChange}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                  </div>
-
-                  {/* Image URL */}
-                  <div className="mb-4">
-                    <label htmlFor="image_url" className="block text-gray-700 text-sm font-bold mb-2">Image URL:</label>
-                    <input
-                      type="text"
-                      id="image_url"
-                      name="image_url"
-                      placeholder="https://example.com/image.jpg"
-                      value={editedProductData.image_url || ''}
-                      onChange={handleProductInputChange}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                    {editedProductData.image_url && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-600 mb-1">Image Preview:</p>
-                        <img 
-                          src={editedProductData.image_url} 
-                          alt="Product preview" 
-                          className="h-40 object-contain border rounded"
-                          onError={(e) => {
-                            e.target.onerror = null; 
-                            e.target.src = 'https://via.placeholder.com/150?text=Image+Not+Found';
-                          }}
-                        />
+                    {/* Style Dropdown (depends on selected category) */}
+                    {editedProductData.category && (
+                      <div className="mb-4">
+                        <label htmlFor="style" className="block text-gray-700 text-sm font-bold mb-2">Style:</label>
+                        <select
+                          id="style"
+                          name="style"
+                          value={editedProductData.style || ''}
+                          onChange={handleProductInputChange}
+                          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        >
+                          <option value="">Select a style</option>
+                          {availableStyles.map(style => (
+                            <option key={style} value={style}>{style}</option>
+                          ))}
+                        </select>
                       </div>
                     )}
-                  </div>
 
-                  {/* Description */}
-                  <div className="mb-4">
-                    <label htmlFor="description" className="block text-gray-700 text-sm font-bold mb-2">Description:</label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      placeholder="Product description..."
-                      value={editedProductData.description || ''}
-                      onChange={handleProductInputChange}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      rows="4"
-                    />
-                  </div>
-
-                  {/* Size and Stock Fields for New Products */}
-                  {!editingProduct.id && (
+                    {/* Price */}
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Sizes:</h3>
-                      {newProductSizes.map((sizeData, index) => (
-                        <div key={index} className="flex items-center mb-2">
-                          <select
-                            className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
-                            value={sizeData.size}
-                            onChange={(e) => {
-                              const updatedSizes = [...newProductSizes];
-                              updatedSizes[index].size = e.target.value;
-                              setNewProductSizes(updatedSizes);
-                            }}
-                          >
-                            {availableSizes.map((sizeOption) => (
-                              <option key={sizeOption} value={sizeOption}>
-                                {sizeOption}
-                              </option>
-                            ))}
-                          </select>
+                      <label htmlFor="price" className="block text-gray-700 text-sm font-bold mb-2">Price:</label>
+                      <input
+                        type="number"
+                        id="price"
+                        name="price"
+                        placeholder="Price"
+                        value={editedProductData.price || ''}
+                        onChange={handleProductInputChange}
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
 
-                          <input
-                            type="number"
-                            className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
-                            placeholder="Stock"
-                            value={sizeData.stock}
-                            onChange={(e) => {
-                              const updatedSizes = [...newProductSizes];
-                              updatedSizes[index].stock = +e.target.value;
-                              setNewProductSizes(updatedSizes);
+                    {/* Image URL */}
+                    <div className="mb-4">
+                      <label htmlFor="image_url" className="block text-gray-700 text-sm font-bold mb-2">Image URL:</label>
+                      <input
+                        type="text"
+                        id="image_url"
+                        name="image_url"
+                        placeholder="https://example.com/image.jpg"
+                        value={editedProductData.image_url || ''}
+                        onChange={handleProductInputChange}
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                      {editedProductData.image_url && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 mb-1">Image Preview:</p>
+                          <img
+                            src={editedProductData.image_url}
+                            alt="Product preview"
+                            className="h-40 object-contain border rounded"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://via.placeholder.com/150?text=Image+Not+Found';
                             }}
                           />
-
-                          {newProductSizes.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveNewSize(index)}
-                              className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm"
-                            >
-                              Remove
-                            </button>
-                          )}
                         </div>
-                      ))}
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <div className="mb-4">
+                      <label htmlFor="description" className="block text-gray-700 text-sm font-bold mb-2">Description:</label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Product description..."
+                        value={editedProductData.description || ''}
+                        onChange={handleProductInputChange}
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        rows="4"
+                      />
+                    </div>
+
+                    {/* Size and Stock Fields for New Products */}
+                    {!editingProduct.id && (
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">Sizes:</h3>
+                        {newProductSizes.map((sizeData, index) => (
+                          <div key={index} className="flex items-center mb-2">
+                            <select
+                              className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
+                              value={sizeData.size}
+                              onChange={(e) => {
+                                const updatedSizes = [...newProductSizes];
+                                updatedSizes[index].size = e.target.value;
+                                setNewProductSizes(updatedSizes);
+                              }}
+                            >
+                              {availableSizes.map((sizeOption) => (
+                                <option key={sizeOption} value={sizeOption}>
+                                  {sizeOption}
+                                </option>
+                              ))}
+                            </select>
+
+                            <input
+                              type="number"
+                              className="shadow border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
+                              placeholder="Stock"
+                              value={sizeData.stock}
+                              onChange={(e) => {
+                                const updatedSizes = [...newProductSizes];
+                                updatedSizes[index].stock = +e.target.value;
+                                setNewProductSizes(updatedSizes);
+                              }}
+                            />
+
+                            {newProductSizes.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveNewSize(index)}
+                                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={handleAddSizeClick}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        >
+                          Add Size
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex space-x-2">
                       <button
-                        type="button"
-                        onClick={handleAddSizeClick}
+                        onClick={editingProduct.id ? updateProduct : addProduct}
                         className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                       >
-                        Add Size
+                        {editingProduct.id ? 'Update Product' : 'Add Product'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingProduct(null);
+                          setEditedProductData({
+                            name: '',
+                            category: '',
+                            style: '',
+                            price: 0,
+                            image_url: '',
+                            description: '',
+                          });
+                          setNewProductSizes([{ size: availableSizes[0], stock: 0 }]);
+                        }}
+                        className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm"
+                      >
+                        Cancel
                       </button>
                     </div>
-                  )}
-
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={editingProduct.id ? updateProduct : addProduct}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                    >
-                      {editingProduct.id ? 'Update Product' : 'Add Product'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingProduct(null);
-                        setEditedProductData({
-                          name: '',
-                          category: '',
-                          style: '',
-                          price: 0,
-                          image_url: '',
-                          description: '',
-                        });
-                        setNewProductSizes([{ size: availableSizes[0], stock: 0 }]);
-                      }}
-                      className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm"
-                    >
-                      Cancel
-                    </button>
                   </div>
-                </div>
-              )}
+                )}
 
 
                 {products.map((product) => (

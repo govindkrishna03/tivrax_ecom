@@ -44,7 +44,7 @@ export default function PaymentSection({
         setSelectedMethod(methodId);
         if (methodId === "gpay" || methodId === "phonepe") {
             setShowUPIButton(true);
-            setHasPaidByUPI(false); // Reset UPI payment status when changing method
+            setHasPaidByUPI(false);
         } else {
             setShowUPIButton(false);
         }

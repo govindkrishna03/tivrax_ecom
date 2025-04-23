@@ -4,15 +4,21 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ConfirmationModal({ orderId, paymentMethod }) {
-  const [countdown, setCountdown] = useState(5);
-  
+  const [countdown, setCountdown] = useState(5); // Countdown timer
+  const [isRedirecting, setIsRedirecting] = useState(false); // To control redirect effect
+
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
+    } else if (countdown === 0 && !isRedirecting) {
+      setIsRedirecting(true);
+      setTimeout(() => {
+        window.location.href = '/'; // Redirect to homepage after 5 seconds
+      }, 1000);
     }
-  }, [countdown]);
-  
+  }, [countdown, isRedirecting]);
+
   const getPaymentMethodName = () => {
     switch (paymentMethod) {
       case "cod": return "Cash on Delivery";
@@ -20,6 +26,13 @@ export default function ConfirmationModal({ orderId, paymentMethod }) {
       case "phonepe": return "PhonePe";
       default: return paymentMethod;
     }
+  };
+
+  const getAdditionalMessage = () => {
+    if (paymentMethod === "gpay" || paymentMethod === "phonepe") {
+      return "Confirmation Pending. Will be updated within 24 hrs.";
+    }
+    return `Redirecting to homepage in ${countdown} seconds...`;
   };
 
   return (
@@ -47,20 +60,21 @@ export default function ConfirmationModal({ orderId, paymentMethod }) {
             </div>
             
             <motion.h2 
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="text-xl font-bold text-center text-gray-900 mb-1"
-            >
-              Order Confirmed!
-            </motion.h2>
+  initial={{ y: 10, opacity: 0 }}
+  animate={{ y: 0, opacity: 1 }}
+  transition={{ delay: 0.3 }}
+  className="text-xl font-bold text-center text-gray-900 mb-1"
+>
+  {paymentMethod === "COD" ? "Order Confirmed!" : "Confirmation Pending"}
+</motion.h2>
+
             
             <motion.p 
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
               className="text-center text-gray-600 mb-6"
-            >
+            > {paymentMethod === "COD"}
               Thank you for your purchase
             </motion.p>
             
@@ -86,7 +100,7 @@ export default function ConfirmationModal({ orderId, paymentMethod }) {
               transition={{ delay: 0.6 }}
               className="text-sm text-center text-gray-500"
             >
-              Redirecting to homepage in {countdown} seconds...
+              {getAdditionalMessage()}
             </motion.p>
           </div>
           

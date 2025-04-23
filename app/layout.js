@@ -6,7 +6,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/footer/Footer';
 import Loading from '../components/Loading';
 import { Toaster } from 'react-hot-toast';
-import { WishlistProvider } from '../app/context/wishlistcontext'; // 🧠 Add this import
+// import { WishlistProvider } from '../app/context/wishlistcontext'; // 🧠 Add this import
 
 export default function RootLayout({ children }) {
   const [loading, setLoading] = useState(true);
@@ -23,11 +23,11 @@ export default function RootLayout({ children }) {
         {loading ? (
           <Loading />
         ) : (
-          <WishlistProvider> {/* ✅ Wrap the entire layout inside */}
+          <>
             <Navbar />
             {children}
             <Footer />
-          </WishlistProvider>
+          </>
         )}
       </body>
     </html>

@@ -101,19 +101,27 @@ export default function Orders() {
                     </h3>
                     <p className="text-xs text-gray-400">
                       Placed on:{" "}
-                      {new Date(order.created_at).toLocaleDateString()} at{" "}
-                      {new Date(order.created_at).toLocaleTimeString()}
+                      {
+                        new Date(order.created_at).toLocaleDateString("en-IN", {
+                          timeZone: "Asia/Kolkata"
+                        })
+                      } at{" "}
+                      {
+                        new Date(order.created_at).toLocaleTimeString("en-IN", {
+                          timeZone: "Asia/Kolkata"
+                        })
+                      }
+
                     </p>
                   </div>
                   <div>
                     <p
-                      className={`flex items-center text-sm font-medium ${
-                        order.order_status === "Success"
+                      className={`flex items-center text-sm font-medium ${order.order_status === "Success"
                           ? "text-green-600"
                           : order.order_status === "Failed"
-                          ? "text-red-600"
-                          : "text-yellow-600"
-                      }`}
+                            ? "text-red-600"
+                            : "text-yellow-600"
+                        }`}
                     >
                       {order.order_status === "Success" ? (
                         <>
