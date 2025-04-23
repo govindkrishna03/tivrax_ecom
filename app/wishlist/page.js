@@ -1,10 +1,10 @@
 'use client';
-
 import { useEffect, useState } from "react";
 import { supabase } from '../../lib/supabase';
 import Link from "next/link";
-import ProductCard from "../../components/Productcard"; // Assuming you have this component
-import { getProductData } from '../../lib/getProductData'; // Import the getProductData function
+import ProductCard from "../../components/Productcard"; 
+import { getProductData } from '../../lib/getProductData'; 
+import Loading from "../../components/Loading"; 
 
 export default function Wishlist() {
   const [wishlistItems, setWishlistItems] = useState([]);
@@ -40,7 +40,7 @@ export default function Wishlist() {
 
     const fetchWishlist = async () => {
       setLoading(true);
-      
+
       // First, get all wishlist items for this user
       const { data: wishlistData, error: wishlistError } = await supabase
         .from('wishlist')
@@ -55,7 +55,7 @@ export default function Wishlist() {
 
       // Then get all product details for these items
       const productIds = wishlistData.map(item => item.product_id);
-      
+
       if (productIds.length === 0) {
         setProducts([]);
         setLoading(false);
@@ -92,14 +92,7 @@ export default function Wishlist() {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
-        <div className="w-full max-w-xl">
-          <h1 className="text-3xl font-semibold mb-2">My Wishlist</h1>
-          <p className="text-gray-600 mb-12">Loading your wishlist...</p>
-        </div>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!userId) {
@@ -161,45 +154,44 @@ export default function Wishlist() {
       <h1 className="text-3xl font-semibold mb-8">My Wishlist</h1>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-       // In your Wishlist component, update the ProductCard rendering part:
-{products.map((product) => (
-  <div key={product.id} className="relative group">
-    <Link href={`/product/${product.id}`} passHref legacyBehavior>
-      <a className="block">
-        <ProductCard
-          id={product.id}
-          name={product.name}
-          size={product.product_sizes?.map(s => s.size).join(', ') || 'No sizes available'}
-          rate={product.price}
-          image={product.image_url || '/placeholder.png'}
-        />
-      </a>
-    </Link>
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleRemoveFromWishlist(product.id);
-      }}
-      className="absolute top-2 right-2 z-20 p-2 rounded-full bg-white bg-opacity-70 hover:bg-opacity-100 transition-all"
-      aria-label="Remove from wishlist"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="red"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-      </svg>
-    </button>
-  </div>
-))}
+        {products.map((product) => (
+          <div key={product.id} className="relative group">
+            <Link href={`/product/${product.id}`} passHref legacyBehavior>
+              <a className="block">
+                <ProductCard
+                  id={product.id}
+                  name={product.name}
+                  size={product.product_sizes?.map(s => s.size).join(', ') || 'No sizes available'}
+                  rate={product.price}
+                  image={product.image_url || '/placeholder.png'}
+                />
+              </a>
+            </Link>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleRemoveFromWishlist(product.id);
+              }}
+              className="absolute top-2 right-2 z-20 p-2 rounded-full bg-white bg-opacity-70 hover:bg-opacity-100 transition-all"
+              aria-label="Remove from wishlist"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="red"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
