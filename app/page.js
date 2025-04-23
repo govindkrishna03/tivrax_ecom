@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import HeroCarousel from "../components/Carousel";
 import ProductCard from "../components/Productcard";
 import CategoryDropdown from "../components/CategoryDropdown";
@@ -7,7 +9,7 @@ export default async function Home() {
   let products = [];
 
   try {
-    products = await getProductData(); // now async!
+    products = await getProductData();
   } catch (error) {
     console.error("Failed to load product data:", error);
   }
@@ -26,9 +28,9 @@ export default async function Home() {
               key={product.id}
               id={product.id}
               name={product.name}
-              size={product.product_sizes?.map(s => s.size).join(', ') || 'No sizes available'} // Show all available sizes or fallback
+              size={product.product_sizes?.map(s => s.size).join(', ') || 'No sizes available'} 
               rate={product.price}
-              image={product.image_url || '/placeholder.png'} // Default image if no image is available
+              image={product.image_url || '/placeholder.png'} 
             />
           ))
         ) : (
