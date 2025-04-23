@@ -61,10 +61,26 @@ export default function PaymentSection({
     const handlePayByUPI = () => {
         const upiId = process.env.NEXT_PUBLIC_UPI_ID;
         const upiUrl = `upi://pay?pa=${upiId}&pn=Praveen&mc=XXXXXX&tid=XXXXXX&url=XXX&am=${amount}`;
-        setHasPaidByUPI(true);
-        window.location.href = upiUrl;
+    
+        // Try to open the UPI app directly
+        if (navigator && navigator.share) {
+            navigator.share({
+                title: 'UPI Payment',
+                text: `Please pay ₹${amount} via UPI`,
+                url: upiUrl,
+            }).then(() => {
+                setHasPaidByUPI(true); // ✅ Set paid after sharing the link
+            }).catch((error) => {
+                console.error("Error sharing UPI link:", error);
+                window.location.href = upiUrl;
+                setHasPaidByUPI(true); // ✅ Also set paid even if fallback is used
+            });
+        } else {
+            window.location.href = upiUrl;
+            setHasPaidByUPI(true); // ✅ Fallback – set paid manually
+        }
     };
-
+    
     return (
         <div className="space-y-8">
             {/* Delivery Details Section (unchanged) */}
