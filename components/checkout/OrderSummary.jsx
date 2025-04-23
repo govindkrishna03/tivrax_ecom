@@ -9,7 +9,8 @@ export default function OrderSummary({
   size,
   image,
   products = [],
-  totalPrice
+  totalPrice,
+  quantity = 1 
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -25,8 +26,8 @@ export default function OrderSummary({
     : [{
         name: productName || "Product",
         price: Number(price) || 0,
-        size,
-        quantity: 1,
+        size: size || "N/A", // Default size
+        quantity: quantity,
         image: image || "/default-product-image.jpg"
       }];
 

@@ -8,29 +8,52 @@ import ConfirmationModal from "../../components/checkout/ConfirmationModal";
 import CheckoutSteps from "../../components/checkout/CheckoutSteps";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
-
+import { useMemo } from "react";
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-
+  
   const productParam = searchParams.get("products");
   const products = productParam ? JSON.parse(decodeURIComponent(productParam)) : [];
   
-  const [checkoutProducts, setCheckoutProducts] = useState(products);
-  
-  // For demonstration, assuming a single product is passed for simplicity.
   const name = searchParams.get("name");
   const price = searchParams.get("price");
   const size = searchParams.get("size");
   const img = searchParams.get("img");
   const productId = searchParams.get("productId");
   const productLink = searchParams.get("productLink");
+  const productquantity = Number(searchParams.get("quantity") || 1);
 
-  // Calculate total price
-  const totalPrice = products.length > 0
-    ? products.reduce((sum, product) => sum + parseFloat(product.price) * (product.quantity || 1), 0)
-    : parseFloat(price || "0");
+  
+  const [checkoutProducts, setCheckoutProducts] = useState(() => {
+    if (products.length > 0) {
+      return products;
+    } else {
+      return [{
+        productId,
+        name,
+        price: Number(price) || 0,
+        size,
+        image: img,
+        quantity: productquantity,
+        productLink
+        
+      }];
+      
+    }
+  });
+  
+ 
 
+  // For demonstration, assuming a single product is passed for simplicity.
+  const totalPrice = useMemo(() => {
+    return checkoutProducts.reduce(
+      (sum, product) =>
+        sum + (parseFloat(product.price) || 0) * (product.quantity || 1),
+      0
+    );
+  }, [checkoutProducts]);
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
@@ -83,7 +106,7 @@ export default function CheckoutPage() {
           product_size: product.size,
           product_link: product.productLink,
           product_image: product.image,
-          quantity: product.quantity || 1,
+          quantity: product.quantity,
           total_price: (product.price || 0) * (product.quantity || 1),
           shipping_address: formData.address,
           phone_number: formData.phone,
@@ -157,6 +180,7 @@ export default function CheckoutPage() {
               price={price}
               size={size}
               image={img}
+              quantity={productquantity}
               products={products} 
               totalPrice={totalPrice}
             />
