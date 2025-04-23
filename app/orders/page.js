@@ -69,6 +69,24 @@ export default function Orders() {
     fetchOrders();
   }, [router]);
 
+  const handleRating = async (orderId, rating) => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ rating }) // Assuming you have a 'rating' field in your orders table
+        .eq("id", orderId);
+
+      if (error) {
+        console.error("Error updating rating:", error.message);
+        alert("There was an issue with submitting your rating.");
+      } else {
+        alert("Thank you for your feedback!");
+      }
+    } catch (err) {
+      console.error("Error submitting rating:", err);
+    }
+  };
+
   if (loading) return <Loading />;
 
   return (
@@ -103,25 +121,25 @@ export default function Orders() {
                       Placed on:{" "}
                       {
                         new Date(order.created_at).toLocaleDateString("en-IN", {
-                          timeZone: "Asia/Kolkata"
+                          timeZone: "Asia/Kolkata",
                         })
                       } at{" "}
                       {
                         new Date(order.created_at).toLocaleTimeString("en-IN", {
-                          timeZone: "Asia/Kolkata"
+                          timeZone: "Asia/Kolkata",
                         })
                       }
-
                     </p>
                   </div>
                   <div>
                     <p
-                      className={`flex items-center text-sm font-medium ${order.order_status === "Success"
+                      className={`flex items-center text-sm font-medium ${
+                        order.order_status === "Success"
                           ? "text-green-600"
                           : order.order_status === "Failed"
-                            ? "text-red-600"
-                            : "text-yellow-600"
-                        }`}
+                          ? "text-red-600"
+                          : "text-yellow-600"
+                      }`}
                     >
                       {order.order_status === "Success" ? (
                         <>
@@ -170,11 +188,37 @@ export default function Orders() {
                       ₹{order.total_price}
                     </p>
                     <p>
-                      <strong className="text-gray-700">
-                        Shipping Address:
-                      </strong>{" "}
+                      <strong className="text-gray-700">Shipping Address:</strong>{" "}
                       {order.shipping_address}
                     </p>
+                  </div>
+                </div>
+
+                {/* Track Order Button */}
+                <div className="mt-4">
+                  <a 
+                    href="https://shiprocket.in/" // Replace with the actual tracking URL if available
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    Track Order
+                  </a>
+                </div>
+
+                {/* Rating Section */}
+                <div className="mt-4">
+                  <span className="text-gray-700">Rate this product:</span>
+                  <div className="flex space-x-1">
+                    {[...Array(5)].map((_, index) => (
+                      <button
+                        key={index}
+                        className="text-yellow-500"
+                        onClick={() => handleRating(order.id, index + 1)}
+                      >
+                        ★
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
