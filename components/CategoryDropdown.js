@@ -1,20 +1,44 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-
-const categories = {
-  Shirts: ["Oversized", "Chinese Collar", "Formal", "Casual"],
-  Tshirts: ["Oversized", "Printed", "Plain", "Graphic"],
-  Hoodies: ["Zipper", "Pullover", "Oversized"],
-  Jeans: ["Slim Fit", "Regular Fit", "Distressed"],
-};
+import { getProductData } from "../lib/getProductData";
 
 export default function CategoryDropdown() {
   const [isDropdownVisible, setIsDropdownVisible] = useState(null);
+  const [categories, setCategories] = useState({});
   const dropdownRef = useRef(null);
 
   const toggleDropdown = (category) => {
     setIsDropdownVisible(isDropdownVisible === category ? null : category);
   };
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const products = await getProductData();
+
+        // Group by main category and subcategories (assuming `style` as subcategory)
+        const grouped = {};
+        products.forEach(({ category, style }) => {
+          if (!grouped[category]) {
+            grouped[category] = new Set();
+          }
+          grouped[category].add(style);
+        });
+
+        // Convert Sets to arrays
+        const finalCategories = {};
+        Object.entries(grouped).forEach(([main, subs]) => {
+          finalCategories[main] = Array.from(subs);
+        });
+
+        setCategories(finalCategories);
+      } catch (err) {
+        console.error('Error fetching product categories:', err);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -53,7 +77,6 @@ export default function CategoryDropdown() {
               {mainCategory}
             </button>
 
-           
             <div
               className={`absolute left-0 mt-2 origin-top bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] transform transition-all duration-300 ease-in-out
                 ${isDropdownVisible === mainCategory
