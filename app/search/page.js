@@ -1,29 +1,38 @@
 'use client';
 import { useState, useEffect } from 'react';
-import * as XLSX from 'xlsx';
-import Link from 'next/link'; // Import Link component from Next.js
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '../../lib/supabase';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [filtered, setFiltered] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await fetch('/Product_details.xlsx');
-      const blob = await res.blob();
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      const data = await blob.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
+        if (error) throw error;
 
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
-      setProducts(jsonData);
+        setProducts(data || []);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Failed to load products');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchData();
+    fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -31,7 +40,8 @@ export default function SearchPage() {
       setFiltered([]);
     } else {
       const result = products.filter((product) =>
-        product.P_Name?.toLowerCase().includes(query.toLowerCase())
+        product.name?.toLowerCase().includes(query.toLowerCase()) ||
+        product.description?.toLowerCase().includes(query.toLowerCase())
       );
       setFiltered(result);
     }
@@ -49,6 +59,32 @@ export default function SearchPage() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [router]);
 
+  if (loading) {
+    return (
+      <div className="p-6 min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center text-red-500">
+          <p className="text-lg">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-black text-white px-4 py-2 rounded-md"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-xl mx-auto mb-6">
@@ -58,32 +94,39 @@ export default function SearchPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="w-full border border-gray-300 px-4 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
+          autoFocus
         />
       </div>
 
       {query && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filtered.length > 0 ? (
-            filtered.map((product, index) => (
-              <Link key={index} href={`/product/${product.P_ID}`}>
-                <div
-                  className="bg-white rounded-xl shadow hover:shadow-lg transition-shadow p-4 flex flex-col items-center text-center"
-                >
+            filtered.map((product) => (
+              <Link key={product.id} href={`/product/${product.id}`} passHref>
+                <div className="bg-white rounded-xl shadow hover:shadow-lg transition-shadow p-4 flex flex-col items-center text-center cursor-pointer">
                   <img
-                    src={product.P_Image}
-                    alt={product.P_Name}
+                    src={product.image_url || '/placeholder.png'}
+                    alt={product.name}
                     className="w-full h-48 object-contain mb-4 rounded"
+                    onError={(e) => {
+                      e.target.src = '/placeholder.png';
+                    }}
                   />
-                  <h2 className="text-lg font-semibold mb-1">{product.P_Name}</h2>
-                  <p className="text-gray-500 mb-2">₹{product.Rate}</p>
-                  <button className="mt-auto bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition">
+                  <h2 className="text-lg font-semibold mb-1">{product.name}</h2>
+                  <p className="text-gray-500 mb-2">₹{product.price}</p>
+                  <button 
+                    className="mt-auto bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition"
+                    onClick={(e) => e.preventDefault()} // Prevent link navigation
+                  >
                     Add to Cart
                   </button>
                 </div>
               </Link>
             ))
           ) : (
-            <p className="col-span-full text-center text-gray-500">No products found.</p>
+            <p className="col-span-full text-center text-gray-500">
+              {products.length === 0 ? 'No products available' : 'No products found'}
+            </p>
           )}
         </div>
       )}

@@ -39,9 +39,10 @@ export function FooterContact() {
             href="tel:+917418713243" 
             className="text-sm text-gray-300 hover:text-white transition-colors duration-300"
           >
-            +91 741 871 3243
+            +91 7418713243,+91 7418396243
           </a>
         </div>
+ 
       </div>
 
     </div>

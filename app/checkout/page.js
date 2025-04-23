@@ -15,7 +15,9 @@ export default function CheckoutPage() {
 
   const productParam = searchParams.get("products");
   const products = productParam ? JSON.parse(decodeURIComponent(productParam)) : [];
-
+  
+  const [checkoutProducts, setCheckoutProducts] = useState(products);
+  
   // For demonstration, assuming a single product is passed for simplicity.
   const name = searchParams.get("name");
   const price = searchParams.get("price");
@@ -72,28 +74,28 @@ export default function CheckoutPage() {
 
     try {
       const { data, error } = await supabase
-        .from("orders")
-        .insert([
-          {
-            user_id: userId,
-            product_id: productId,
-            product_name: name,
-            product_size: size,
-            product_link: productLink,
-            product_image: img,
-            quantity: products[0]?.quantity || 1,
-            total_price: totalPrice,
-            shipping_address: formData.address,
-            phone_number: formData.phone,
-            email: formData.email,
-            order_status: "Pending",
-            payment_mode: method,
-            created_at: istNow.toISOString(),
-            updated_at: istNow.toISOString(), // ✅ add this line for IST time
-          },
-        ])
-        .select();
-
+      .from("orders")
+      .insert(
+        checkoutProducts.map(product => ({
+          user_id: userId,
+          product_id: product.productId, // ✅ this must match what's passed from cart
+          product_name: product.name,
+          product_size: product.size,
+          product_link: product.productLink,
+          product_image: product.image,
+          quantity: product.quantity || 1,
+          total_price: (product.price || 0) * (product.quantity || 1),
+          shipping_address: formData.address,
+          phone_number: formData.phone,
+          email: formData.email,
+          order_status: "Pending",
+          payment_mode: method,
+          created_at: istNow.toISOString(),
+          updated_at: istNow.toISOString(),
+        }))
+      )
+      .select();
+    
       if (error) {
         console.error("Error inserting order:", error.message);
         alert("There was an error confirming your order: " + error.message);

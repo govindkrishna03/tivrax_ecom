@@ -8,13 +8,17 @@ import { Card, CardContent } from '../../components/ui/card';
 import { PlusIcon, MinusIcon } from 'lucide-react';
 import { motion } from '../../components/ui/motion';
 export function CartItemCard({ item }) {
-  const { updateItemQuantity, navigateToProduct } = useCart();
+  const { updateItemQuantity, navigateToProduct, updateItemSize } = useCart();
+
   const [availableSizes, setAvailableSizes] = useState([]);
-  const [selectedSize, setSelectedSize] = useState(item.size || 'Standard');
+  const [selectedSize, setSelectedSize] = useState(
+    item.size && !item.size.includes(',') ? item.size : ''
+  );
+  
   const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
   const [userId, setUserId] = useState(null);
 
-  // Get the current user
+
   useEffect(() => {
     const fetchUser = async () => {
       const { data, error } = await supabase.auth.getUser();
@@ -26,7 +30,7 @@ export function CartItemCard({ item }) {
   }, []);
 
   useEffect(() => {
-    if (!userId) return; // 🛑 Wait until userId is set
+    if (!userId) return; 
   
     const fetchSizes = async () => {
       const { data, error } = await supabase
@@ -61,10 +65,10 @@ export function CartItemCard({ item }) {
       .update({ size: newSize })
       .eq('id', item.id)
       .eq('user_id', userId);
-
-    if (error) {
-      console.error('Error updating size:', error.message);
-    }
+      if (!error) {
+        updateItemSize(item.id, newSize); // 👈 update context state
+      }
+      
   };
 
   return (

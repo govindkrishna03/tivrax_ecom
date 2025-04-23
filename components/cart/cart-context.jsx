@@ -2,15 +2,21 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useRouter } from 'next/navigation';
 
 const CartContext = createContext(undefined);
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+// Add inside CartProvider, below fetchCartItems
+const refreshCart = () => {
+  fetchCartItems(); // reuse the same function
+};
 
   // Calculate derived values
-  const totalItems = cartItems.length;
+  const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + item.rate * (item.quantity || 1),
     0
@@ -36,7 +42,7 @@ export function CartProvider({ children }) {
           .from('cart')
           .select('id, quantity, size, product_id, products(name, image_url, price)')
           .eq('user_id', userId);
-  
+        
         if (error) {
           console.error('Error fetching cart items:', error);
         } else {
@@ -89,11 +95,30 @@ export function CartProvider({ children }) {
   };
 
   const navigateToProduct = (id) => {
-    window.location.href = `/product/${id}`;
+    router.push(`/product/${id}`);
   };
-
+  const updateItemSize = (id, newSize) => {
+    setCartItems(prevItems =>
+      prevItems.map(item =>
+        item.id === id ? { ...item, size: newSize } : item
+      )
+    );
+  };
+  
   const checkout = () => {
-    alert('Redirecting to CheckOut');
+    // Prepare products data for checkout
+    const productsData = cartItems.map(item => ({
+      productId: item.product_id,
+      name: item.name,
+      price: item.rate,
+      size: item.size,
+      image: item.image,
+      quantity: item.quantity,
+      productLink: `/product/${item.product_id}`
+    }));
+
+    // Navigate to checkout with all products
+    router.push(`/checkout?products=${encodeURIComponent(JSON.stringify(productsData))}`);
   };
 
   const value = {
@@ -104,8 +129,10 @@ export function CartProvider({ children }) {
     updateItemQuantity,
     navigateToProduct,
     checkout,
+    updateItemSize, // 👈 add this
   };
-
+  
+  
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
