@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from './../lib/supabase';
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 const ProductCard = ({ id, name, rate, size, image }) => {
   const [cartItems, setCartItems] = useState([]);
+  const [wishlistItems, setWishlistItems] = useState([]);
   const [userId, setUserId] = useState(null);
   const router = useRouter();
 
@@ -48,6 +50,19 @@ const ProductCard = ({ id, name, rate, size, image }) => {
     }
   };
 
+  const fetchWishlistItems = async () => {
+    if (userId) {
+      const { data, error } = await supabase
+        .from('wishlist')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (!error) {
+        setWishlistItems(data || []);
+      }
+    }
+  };
+
   const showNotification = (message) => {
     if ('Notification' in window) {
       if (Notification.permission === 'granted') {
@@ -71,9 +86,6 @@ const ProductCard = ({ id, name, rate, size, image }) => {
       alert('Please login to add items to cart');
       return;
     }
-  
-    // Debugging the size value
-    console.log('Selected size:', size);
   
     const isAlreadyInCart = cartItems.some(
       item => item.product_id === id && item.size === size
@@ -99,24 +111,79 @@ const ProductCard = ({ id, name, rate, size, image }) => {
     } else {
       console.error('Error adding to cart:', error.message);
     }
-    
   };
-  
+
+  const handleWishlistToggle = async (e) => {
+    e.stopPropagation();
+    
+    if (!userId) {
+      alert('Please login to manage your wishlist');
+      return;
+    }
+
+    const isInWishlist = wishlistItems.some(item => item.product_id === id);
+
+    if (isInWishlist) {
+      // Remove from wishlist
+      const { error } = await supabase
+        .from('wishlist')
+        .delete()
+        .eq('user_id', userId)
+        .eq('product_id', id);
+
+      if (!error) {
+        fetchWishlistItems();
+        showNotification(`${name} removed from wishlist`);
+      }
+    } else {
+      // Add to wishlist
+      const { error } = await supabase.from('wishlist').insert([
+        {
+          user_id: userId,
+          product_id: id,
+        }
+      ]);
+      
+      if (!error) {
+        fetchWishlistItems();
+        showNotification(`${name} added to wishlist!`);
+      }
+    }
+  };
+
   const handleProductClick = () => {
     router.push(`/product/${id}`);
   };
 
   useEffect(() => {
-    if (userId) fetchCartItems();
+    if (userId) {
+      fetchCartItems();
+      fetchWishlistItems();
+    }
   }, [userId]);
 
   if (!id) return null;
+
+  const isInWishlist = wishlistItems.some(item => item.product_id === id);
 
   return (
     <div
       className="w-full max-w-sm sm:h-[400px] mb-10 bg-white rounded-lg shadow-lg hover:scale-105 hover:shadow-2xl transition-transform transform flex flex-col justify-between relative overflow-hidden"
       onClick={handleProductClick}
     >
+      {/* Wishlist button in top-right corner */}
+      <button
+        onClick={handleWishlistToggle}
+        className="absolute top-2 right-2 z-20 p-2 rounded-full bg-white bg-opacity-70 hover:bg-opacity-100 transition-all"
+        aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+      >
+        {isInWishlist ? (
+          <FaHeart className="text-red-500 text-xl" />
+        ) : (
+          <FaRegHeart className="text-gray-600 text-xl hover:text-red-500" />
+        )}
+      </button>
+
       <div className="w-full h-48 p-5 flex justify-center items-center">
         <img
           className="object-contain max-w-full max-h-full transition-all duration-300 transform hover:scale-110"
