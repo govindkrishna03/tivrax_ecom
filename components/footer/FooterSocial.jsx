@@ -45,15 +45,7 @@ const socialPlatforms = [
     icon: <Linkedin size={20} />,
     color: "bg-blue-700",
     hoverColor: "hover:shadow-lg hover:shadow-blue-700/30"
-  },
-  {
-    name: "WhatsApp",
-    url: "https://wa.me/7418713243?text=Hello%20I%20have%20a%20question",
-    icon: <FaWhatsapp size={20} />,
-    color: "bg-green-500",
-    hoverColor: "hover:shadow-lg hover:shadow-green-500/30"
   }
-  
 ];
 
 export function FooterSocial() {
