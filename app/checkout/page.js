@@ -101,13 +101,15 @@ export default function CheckoutPage() {
       .insert(
         checkoutProducts.map(product => ({
           user_id: userId,
-          product_id: product.productId, // ✅ this must match what's passed from cart
+          product_id: product.productId,
           product_name: product.name,
           product_size: product.size,
           product_link: product.productLink,
           product_image: product.image,
           quantity: product.quantity,
           total_price: (product.price || 0) * (product.quantity || 1),
+          name: formData.name,
+          pincode: formData.pincode,
           shipping_address: formData.address,
           phone_number: formData.phone,
           email: formData.email,

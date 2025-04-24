@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import jsPDF from 'jspdf';
-const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 const availableSizes = ['S', 'M', 'L', 'XL', 'XXL'];
 
 // Define categories and their corresponding styles
@@ -54,52 +55,127 @@ const AdminPage = () => {
   
   const handleDownloadBillPDF = async (order) => {
     try {
-      const billData = {
-        orderId: order.id,
-        date: order.created_at,
-        email: order.email,
-        productId: order.product_id,
-        productName: order.product_name,
-        quantity: order.quantity,
-        totalPrice: order.total_price,
-        paymentMode: order.payment_mode,
-        shippingAddress: order.shipping_address,
-        orderStatus: order.order_status,
-        phoneNumber: order.phone_number,
-        size: order.product_size,
-      };
-      // Convert the date object to a more readable format if needed
-      billData.date = order.created_at.toLocaleString();
-
+      const {
+        id,
+        name,
+        created_at,
+        email,
+        product_id,
+        product_name,
+        quantity,
+        total_price,
+        payment_mode,
+        shipping_address,
+        order_status,
+        phone_number,
+        product_size,
+      } = order;
+  
+      const formattedDate = new Date(created_at).toLocaleString();
       const doc = new jsPDF();
-
-      // Add content to the PDF (adjust spacing and formatting as needed)
-      doc.setFontSize(16);
-      doc.text("Order Bill", 10, 10);
+  
+      // Header with Brand Name
+      doc.setFontSize(20);
+      doc.setTextColor(40, 40, 40);
+      doc.text("Tivrax Clothing", 14, 20);
+  
       doc.setFontSize(12);
-      for (const key in billData) {
-        doc.text(`${key}: ${billData[key]}`, 10, 20 + (Object.keys(billData).indexOf(key) * 10));
-      }
-
-      // Generate PDF filename
-      const filename = `order_${order.id}_bill.pdf`;
-
+      doc.setTextColor(100);
+      doc.text("Thank you for your purchase!", 14, 28);
+      doc.text("This bill is for your shipping and order summary.", 14, 34);
+  
+      // Optional Logo (uncomment and set image src)
+      // const img = new Image();
+      // img.src = "/path-to-logo.png";
+      // doc.addImage(img, "PNG", 150, 10, 40, 15);
+  
+      // Customer Info
+      const customerInfo = [
+        ["Invoice ID:", id],
+        ["Date:", formattedDate],
+        ["Customer Name:", name],
+        ["Email:", email],
+        ["Phone:", phone_number],
+      ];
+  
+      doc.setFontSize(11);
+      doc.setTextColor(50);
+      customerInfo.forEach(([label, value], i) => {
+        doc.text(`${label} ${value}`, 14, 45 + i * 6);
+      });
+  
+      // Product Details Table
+      autoTable(doc, {
+        startY: 80,
+        head: [["Product ID", "Name", "Size", "Qty", "Price", "Payment", "Status"]],
+        body: [
+          [
+            product_id,
+            product_name,
+            product_size,
+            quantity,
+            `₹${total_price}`,
+            payment_mode,
+            order_status,
+          ],
+        ],
+        theme: "grid",
+        headStyles: {
+          fillColor: [0, 0, 0],
+          textColor: [255, 255, 255],
+          fontSize: 11,
+        },
+        styles: {
+          fontSize: 10,
+          cellPadding: 3,
+        },
+      });
+  
+      // Shipping Address
+      doc.setFontSize(12);
+      doc.setTextColor(40);
+      doc.text("Shipping Address:", 14, doc.lastAutoTable.finalY + 10);
+      doc.setFontSize(10);
+      doc.setTextColor(80);
+      doc.text(shipping_address, 14, doc.lastAutoTable.finalY + 16, { maxWidth: 180 });
+  
+      // Footer
+      doc.setFontSize(10);
+      doc.setTextColor(130);
+      doc.text("If you have any questions, reach out to us on Instagram or WhatsApp.", 14, doc.internal.pageSize.height - 25);
+      doc.setTextColor(100);
+      doc.text("Tivrax Clothing © 2025", 14, doc.internal.pageSize.height - 15);
+  
+      const filename = `Tivrax_Invoice_${id}.pdf`;
       doc.save(filename);
     } catch (error) {
-      console.error("Error generating or downloading PDF:", error);
-      alert("Error generating PDF bill: " + error.message);
+      console.error("PDF generation failed:", error);
+      alert("Could not generate invoice: " + error.message);
     }
   };
 
   const checkAdmin = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (!session) {
       router.push('/auth/signin');
       return;
     }
 
-    const userEmail = session.user.email;
-    if (adminEmails.includes(userEmail)) {
+    // Get the user's profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('Error fetching profile:', profileError?.message);
+      router.push('/not-authorized');
+      return;
+    }
+
+    // Check if the user has admin role
+    if (profile.role === 'admin') {
       setIsAuthorized(true);
       await fetchOrders();
       await fetchProducts();
@@ -356,6 +432,8 @@ const AdminPage = () => {
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Product ID</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Product Name</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">User Email</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">User Name</th>
+
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Total Price</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Size</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Quantity</th>
@@ -376,6 +454,7 @@ const AdminPage = () => {
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.product_id}</td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.product_name}</td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.email}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.name}</td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">₹{order.total_price}</td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.product_size}</td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.quantity}</td>
