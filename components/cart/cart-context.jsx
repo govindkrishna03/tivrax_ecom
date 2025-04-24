@@ -40,7 +40,7 @@ const refreshCart = () => {
   
         const { data: cart, error } = await supabase
           .from('cart')
-          .select('id, quantity, size, product_id, products(name, image_url, price)')
+          .select('id, quantity, size, product_id, products(name, image_url, price,discounted_price)')
           .eq('user_id', userId);
         
         if (error) {
@@ -53,8 +53,11 @@ const refreshCart = () => {
             quantity: item.quantity || 1,
             name: item.products?.name,
             image: item.products?.image_url,
-            rate: item.products?.price,
+            rate: item.products?.discounted_price ?? item.products?.price, // 👈 fallback to price
+            originalPrice: item.products?.price,
+            discountedPrice: item.products?.discounted_price,
           }));
+          
           setCartItems(updatedCart);
         }
       } catch (err) {

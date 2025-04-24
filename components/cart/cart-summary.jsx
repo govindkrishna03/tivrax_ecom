@@ -18,7 +18,7 @@ export function CartSummary() {
     const cleanedCartItems = cartItems.map(item => ({
       productId: item.product_id,
       name: item.name,
-      price: Number(item.rate),
+      price: Number(item.discounted_price) || Number(item.rate),
       size: item.size,
       image: item.image,
       quantity: item.quantity,

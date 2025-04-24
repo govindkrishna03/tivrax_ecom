@@ -85,7 +85,7 @@ const ProductDescriptionPage = () => {
     }
 
     router.push(
-      `/checkout?name=${encodeURIComponent(product.name)}&price=${product.price}&size=${selectedSize}&img=${encodeURIComponent(product.image_url)}&productId=${product.id}&productLink=${encodeURIComponent(currentUrl)}&quantity=${quantity}`
+      `/checkout?name=${encodeURIComponent(product.name)}&price=${product.discounted_price}&size=${selectedSize}&img=${encodeURIComponent(product.image_url)}&productId=${product.id}&productLink=${encodeURIComponent(currentUrl)}&quantity=${quantity}`
     );
   };
 
@@ -164,10 +164,26 @@ const ProductDescriptionPage = () => {
 
             {/* Price */}
             <div className="mt-6">
-              <p className="text-3xl font-bold text-gray-800">₹{product.price}</p>
+              {product.discounted_price ? (
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="text-4xl font-bold text-red-600">
+                    ₹{product.discounted_price}
+                  </span>
+                  <span className="text-lg line-through text-gray-400">
+                    ₹{product.price}
+                  </span>
+                  <span className="ml-1 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                    {Math.round((1 - product.discounted_price / product.price) * 100)}% OFF
+                  </span>
+                </div>
+              ) : (
+                <p className="text-4xl font-bold text-gray-800 mb-1">
+                  ₹{product.price}
+                </p>
+              )}
               {quantity > 1 && (
-                <p className="text-lg text-gray-600 mt-1">
-                  Total: ₹{(product.price * quantity).toFixed(2)}
+                <p className="text-md text-gray-600 mt-1">
+                  Total: ₹{(product.discounted_price || product.price) * quantity}
                 </p>
               )}
             </div>
@@ -191,8 +207,8 @@ const ProductDescriptionPage = () => {
               onClick={handleBuyNow}
               disabled={!user}
               className={`w-full py-4 text-lg font-semibold rounded-lg transition-colors ${user
-                  ? "bg-black hover:bg-gray-900 text-white"
-                  : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                ? "bg-black hover:bg-gray-900 text-white"
+                : "bg-gray-300 text-gray-600 cursor-not-allowed"
                 }`}
             >
               Buy Now

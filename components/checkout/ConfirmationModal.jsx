@@ -47,6 +47,92 @@ export default function ConfirmationModal({
     }, 500);
   };
 
+  const renderPaymentAnimation = () => {
+    switch(paymentMethod) {
+      case "gpay":
+        return (
+          <motion.div
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ 
+              type: "spring",
+              stiffness: 500,
+              damping: 15,
+              repeat: 1,
+              repeatType: "mirror"
+            }}
+            className="w-16 h-16 rounded-full bg-white border-2 border-blue-500 flex items-center justify-center"
+          >
+            <div className="relative w-10 h-10">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="absolute w-full h-2 bg-blue-500 rounded-full top-1"
+              />
+              <motion.div
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+                className="absolute w-2 h-full bg-blue-500 rounded-full right-1"
+              />
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+                className="absolute w-2 h-full bg-blue-500 rounded-full left-1"
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="absolute w-full h-2 bg-blue-500 rounded-full bottom-1"
+              />
+            </div>
+          </motion.div>
+        );
+      
+      case "phonepe":
+        return (
+          <motion.div
+            initial={{ rotate: 0 }}
+            animate={{ rotate: 360 }}
+            transition={{ 
+              type: "spring",
+              stiffness: 300,
+              damping: 10,
+              repeat: 1,
+              repeatType: "reverse"
+            }}
+            className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-2xl text-purple-600"
+            >
+              P
+            </motion.div>
+          </motion.div>
+        );
+      
+      default:
+        return (
+          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 500 }}
+              className="text-2xl"
+            >
+              ✓
+            </motion.span>
+          </div>
+        );
+    }
+  };
+
   return (
     <AnimatePresence>
       {!isClosing && (
@@ -65,9 +151,7 @@ export default function ConfirmationModal({
           >
             <div className="p-6">
               <div className="mb-4 flex justify-center">
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                  <span className="text-2xl">✓</span>
-                </div>
+                {renderPaymentAnimation()}
               </div>
               
               <motion.h2 
@@ -76,7 +160,11 @@ export default function ConfirmationModal({
                 transition={{ delay: 0.3 }}
                 className="text-xl font-bold text-center text-gray-900 mb-1"
               >
-                {paymentMethod === "cod" ? "Order Confirmed!" : "Payment Received"}
+                {paymentMethod === "cod" 
+                  ? "Order Confirmed!" 
+                  : paymentMethod === "gpay"
+                    ? "Google Pay Processing"
+                    : "PhonePe Payment Started"}
               </motion.h2>
               
               <motion.p 
@@ -85,7 +173,9 @@ export default function ConfirmationModal({
                 transition={{ delay: 0.4 }}
                 className="text-center text-gray-600 mb-6"
               >
-                Thank you for your purchase!
+                {paymentMethod === "cod" 
+                  ? "Thank you for your purchase!" 
+                  : "Please complete payment in the next step"}
               </motion.p>
               
               <motion.div 

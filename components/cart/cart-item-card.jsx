@@ -14,7 +14,7 @@ export function CartItemCard({ item }) {
   const [selectedSize, setSelectedSize] = useState(
     item.size && !item.size.includes(',') ? item.size : ''
   );
-  
+
   const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
   const [userId, setUserId] = useState(null);
 
@@ -30,29 +30,29 @@ export function CartItemCard({ item }) {
   }, []);
 
   useEffect(() => {
-    if (!userId) return; 
-  
+    if (!userId) return;
+
     const fetchSizes = async () => {
       const { data, error } = await supabase
         .from('cart')
         .select('size')
         .eq('product_id', item.product_id)
         .eq('user_id', userId);
-  
+
       if (!error && data) {
         const uniqueSizes = [...new Set(data.map(item => item.size))]
-        .flatMap(size => size.split(',')) // 👈 split comma-separated values
-        .map(size => size.trim())         // 👈 remove spaces
-        .filter(Boolean)                  // 👈 remove empty strings
-        .filter((value, index, self) => self.indexOf(value) === index) // 👈 remove duplicates
-        .map(size => ({ size }));
-      
+          .flatMap(size => size.split(',')) // 👈 split comma-separated values
+          .map(size => size.trim())         // 👈 remove spaces
+          .filter(Boolean)                  // 👈 remove empty strings
+          .filter((value, index, self) => self.indexOf(value) === index) // 👈 remove duplicates
+          .map(size => ({ size }));
+
         setAvailableSizes(uniqueSizes);
       } else {
         console.error('Error fetching sizes:', error?.message);
       }
     };
-  
+
     fetchSizes();
   }, [item.product_id, userId]);
 
@@ -65,17 +65,17 @@ export function CartItemCard({ item }) {
       .update({ size: newSize })
       .eq('id', item.id)
       .eq('user_id', userId);
-      if (!error) {
-        updateItemSize(item.id, newSize); // 👈 update context state
-      }
-      
+    if (!error) {
+      updateItemSize(item.id, newSize); // 👈 update context state
+    }
+
   };
 
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
         <div className="flex flex-col sm:flex-row w-full">
-          <div 
+          <div
             className="w-full sm:w-1/3 h-40 sm:h-auto cursor-pointer overflow-hidden"
             onClick={() => navigateToProduct(item.product_id)}
           >
@@ -93,7 +93,7 @@ export function CartItemCard({ item }) {
 
           <div className="flex-1 p-6 flex flex-col justify-between">
             <div>
-              <div 
+              <div
                 className="cursor-pointer"
                 onClick={() => navigateToProduct(item.product_id)}
               >
@@ -106,16 +106,31 @@ export function CartItemCard({ item }) {
                 </p>
               </div>
 
-              <p className="text-lg font-medium text-primary mt-2">
-                ₹{item.rate?.toLocaleString() || '0.00'}
-              </p>
+              {item.discountedPrice ? (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-lg font-bold text-red-600">
+                    ₹{item.discountedPrice.toLocaleString()}
+                  </span>
+                  <span className="text-sm line-through text-gray-500">
+                    ₹{item.originalPrice.toLocaleString()}
+                  </span>
+                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                    {Math.round((1 - item.discountedPrice / item.originalPrice) * 100)}% OFF
+                  </span>
+                </div>
+              ) : (
+                <p className="text-lg font-bold text-gray-800 mt-2">
+                  ₹{item.originalPrice.toLocaleString()}
+                </p>
+              )}
+
             </div>
 
             <div className="flex justify-between items-center mt-4">
               <div className="flex items-center space-x-1">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
+                <Button
+                  variant="outline"
+                  size="icon"
                   className="h-8 w-8 rounded-full"
                   onClick={() => updateItemQuantity(item.id, -1)}
                 >
@@ -126,9 +141,9 @@ export function CartItemCard({ item }) {
                   {item.quantity || 1}
                 </span>
 
-                <Button 
-                  variant="outline" 
-                  size="icon" 
+                <Button
+                  variant="outline"
+                  size="icon"
                   className="h-8 w-8 rounded-full"
                   onClick={() => updateItemQuantity(item.id, 1)}
                 >
@@ -141,8 +156,8 @@ export function CartItemCard({ item }) {
               </p>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-  Size: {selectedSize}
-</p>
+              Size: {selectedSize}
+            </p>
 
             <Button
               variant="outline"
@@ -151,7 +166,7 @@ export function CartItemCard({ item }) {
             >
               Select Size
             </Button>
-              
+
             {isSizeModalOpen && (
               <div className="fixed inset-0 bg-white bg-opacity-50 flex justify-center items-center z-50">
                 <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">

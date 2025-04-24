@@ -16,6 +16,8 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [hoveredStars, setHoveredStars] = useState({});
+  const [submittedRatings, setSubmittedRatings] = useState({});
   const router = useRouter();
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function Orders() {
           phone_number,
           email,
           shipping_address,
+          rating,
           created_at,
           updated_at,
           products:product_id (
@@ -61,6 +64,11 @@ export default function Orders() {
         setErrorMessage("Error fetching orders: " + error.message);
       } else {
         setOrders(data);
+        const ratingsMap = {};
+        data.forEach((order) => {
+          if (order.rating) ratingsMap[order.id] = order.rating;
+        });
+        setSubmittedRatings(ratingsMap);
       }
 
       setLoading(false);
@@ -73,14 +81,14 @@ export default function Orders() {
     try {
       const { error } = await supabase
         .from("orders")
-        .update({ rating }) // Assuming you have a 'rating' field in your orders table
+        .update({ rating })
         .eq("id", orderId);
 
       if (error) {
         console.error("Error updating rating:", error.message);
-        alert("There was an issue with submitting your rating.");
+        alert("There was an issue submitting your rating.");
       } else {
-        alert("Thank you for your feedback!");
+        setSubmittedRatings((prev) => ({ ...prev, [orderId]: rating }));
       }
     } catch (err) {
       console.error("Error submitting rating:", err);
@@ -92,7 +100,7 @@ export default function Orders() {
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">
+        <h2 className="text-3xl font-bold text-center mb-10 text-gray-800">
           <PackageCheck className="inline mr-2" size={28} />
           Your Orders
         </h2>
@@ -106,59 +114,36 @@ export default function Orders() {
             You haven’t placed any orders yet.
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {orders.map((order) => (
               <div
                 key={order.id}
-                className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white border border-gray-200 rounded-xl p-6 shadow hover:shadow-md transition"
               >
                 <div className="flex justify-between items-center mb-2">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-700">
                       Order #{order.id}
                     </h3>
-                    <p className="text-xs text-gray-400">
-                      Placed on:{" "}
-                      {
-                        new Date(order.created_at).toLocaleDateString("en-IN", {
-                          timeZone: "Asia/Kolkata",
-                        })
-                      } at{" "}
-                      {
-                        new Date(order.created_at).toLocaleTimeString("en-IN", {
-                          timeZone: "Asia/Kolkata",
-                        })
-                      }
+                    <p className="text-xs text-gray-500">
+                      Placed on{" "}
+                      {new Date(order.created_at).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                      })}
                     </p>
                   </div>
-                  <div>
-                    <p
-                      className={`flex items-center text-sm font-medium ${
-                        order.order_status === "Success"
-                          ? "text-green-600"
-                          : order.order_status === "Failed"
-                          ? "text-red-600"
-                          : "text-yellow-600"
-                      }`}
-                    >
-                      {order.order_status === "Success" ? (
-                        <>
-                          <CheckCircle size={18} className="mr-1" />
-                          Placed
-                        </>
-                      ) : order.order_status === "Failed" ? (
-                        <>
-                          <AlertCircle size={18} className="mr-1" />
-                          Failed
-                        </>
-                      ) : (
-                        <>
-                          <XCircle size={18} className="mr-1" />
-                          Pending
-                        </>
-                      )}
-                    </p>
-                  </div>
+
+                  <span
+                    className={`text-sm font-medium px-3 py-1 rounded-full ${
+                      order.order_status === "Success"
+                        ? "bg-green-100 text-green-700"
+                        : order.order_status === "Failed"
+                        ? "bg-red-100 text-red-600"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {order.order_status}
+                  </span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4 mt-4">
@@ -172,53 +157,74 @@ export default function Orders() {
 
                   <div className="flex-1 text-sm text-gray-600 space-y-2">
                     <p>
-                      <strong className="text-gray-700">Product:</strong>{" "}
+                      <strong className="text-gray-800">Product:</strong>{" "}
                       {order.products?.name || "Not Found"}
                     </p>
                     <p>
-                      <strong className="text-gray-700">Description:</strong>{" "}
+                      <strong className="text-gray-800">Description:</strong>{" "}
                       {order.products?.description || "—"}
                     </p>
                     <p>
-                      <strong className="text-gray-700">Quantity:</strong>{" "}
+                      <strong className="text-gray-800">Quantity:</strong>{" "}
                       {order.quantity}
                     </p>
                     <p>
-                      <strong className="text-gray-700">Total Price:</strong>{" "}
+                      <strong className="text-gray-800">Total Price:</strong>{" "}
                       ₹{order.total_price}
                     </p>
                     <p>
-                      <strong className="text-gray-700">Shipping Address:</strong>{" "}
+                      <strong className="text-gray-800">Shipping Address:</strong>{" "}
                       {order.shipping_address}
                     </p>
                   </div>
                 </div>
 
-                {/* Track Order Button */}
-                <div className="mt-4">
-                  <a 
-                    href="https://shiprocket.in/" // Replace with the actual tracking URL if available
+                <div className="mt-6 flex justify-between items-center flex-wrap gap-4">
+                  <a
+                    href="https://shiprocket.in/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow"
                   >
                     Track Order
                   </a>
-                </div>
 
-                {/* Rating Section */}
-                <div className="mt-4">
-                  <span className="text-gray-700">Rate this product:</span>
-                  <div className="flex space-x-1">
-                    {[...Array(5)].map((_, index) => (
-                      <button
-                        key={index}
-                        className="text-yellow-500"
-                        onClick={() => handleRating(order.id, index + 1)}
-                      >
-                        ★
-                      </button>
-                    ))}
+                  {/* Rating */}
+                  <div>
+                    <p className="text-sm text-gray-700 mb-1">Rate this product:</p>
+                    <div className="flex space-x-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          className={`text-xl ${
+                            (hoveredStars[order.id] || submittedRatings[order.id]) >= star
+                              ? "text-yellow-500"
+                              : "text-gray-300"
+                          }`}
+                          onMouseEnter={() =>
+                            setHoveredStars((prev) => ({
+                              ...prev,
+                              [order.id]: star,
+                            }))
+                          }
+                          onMouseLeave={() =>
+                            setHoveredStars((prev) => ({
+                              ...prev,
+                              [order.id]: 0,
+                            }))
+                          }
+                          onClick={() => handleRating(order.id, star)}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                    {submittedRatings[order.id] && (
+                      <p className="text-xs text-green-600 mt-1">
+                        You rated this {submittedRatings[order.id]} star
+                        {submittedRatings[order.id] > 1 ? "s" : ""}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

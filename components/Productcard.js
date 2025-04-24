@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from './../lib/supabase';
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { FaHeart, FaRegHeart, FaShoppingCart } from "react-icons/fa";
 
-const ProductCard = ({ id, name, rate, size, image }) => {
+const ProductCard = ({ id, name, rate, discount_rate, size, image, rating }) => {
   const [cartItems, setCartItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
   const [userId, setUserId] = useState(null);
@@ -13,10 +13,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
 
   useEffect(() => {
     const getUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUserId(session.user.id);
       }
@@ -81,21 +78,21 @@ const ProductCard = ({ id, name, rate, size, image }) => {
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
-  
+
     if (!userId) {
       alert('Please login to add items to cart');
       return;
     }
-  
+
     const isAlreadyInCart = cartItems.some(
       item => item.product_id === id && item.size === size
     );
-  
+
     if (isAlreadyInCart) {
       showNotification(`${name} (Size ${size}) is already in your cart`);
       return;
     }
-  
+
     const { error } = await supabase.from('cart').insert([
       {
         user_id: userId,
@@ -104,7 +101,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
         quantity: 1,
       }
     ]);
-    
+
     if (!error) {
       fetchCartItems();
       showNotification(`${name} (Size ${size}) added to cart successfully!`);
@@ -113,9 +110,11 @@ const ProductCard = ({ id, name, rate, size, image }) => {
     }
   };
 
+
+
   const handleWishlistToggle = async (e) => {
     e.stopPropagation();
-    
+
     if (!userId) {
       alert('Please login to manage your wishlist');
       return;
@@ -143,7 +142,7 @@ const ProductCard = ({ id, name, rate, size, image }) => {
           product_id: id,
         }
       ]);
-      
+
       if (!error) {
         fetchWishlistItems();
         showNotification(`${name} added to wishlist!`);
@@ -168,46 +167,80 @@ const ProductCard = ({ id, name, rate, size, image }) => {
 
   return (
     <div
-      className="w-full max-w-sm sm:h-[400px] mb-10 bg-white rounded-lg shadow-lg hover:scale-105 hover:shadow-2xl transition-transform transform flex flex-col justify-between relative overflow-hidden"
+      className="w-full max-w-sm bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col h-full"
       onClick={handleProductClick}
     >
-      {/* Wishlist button in top-right corner */}
-      <button
-        onClick={handleWishlistToggle}
-        className="absolute top-2 right-2 z-20 p-2 rounded-full bg-white bg-opacity-70 hover:bg-opacity-100 transition-all"
-        aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
-      >
-        {isInWishlist ? (
-          <FaHeart className="text-red-500 text-xl" />
-        ) : (
-          <FaRegHeart className="text-gray-600 text-xl hover:text-red-500" />
-        )}
-      </button>
-
-      <div className="w-full h-48 p-5 flex justify-center items-center">
-        <img
-          className="object-contain max-w-full max-h-full transition-all duration-300 transform hover:scale-110"
-          src={image}
-          alt={name}
-          onError={(e) => e.target.src = '/placeholder.png'}
-        />
+      {/* Product image and wishlist button */}
+      <div className="relative">
+        <div className="w-full h-48 sm:h-56 p-4 flex justify-center items-center bg-gray-50">
+          <img
+            className="object-contain w-full h-full transition-all duration-500 group-hover:scale-105"
+            src={image}
+            alt={name}
+            onError={(e) => (e.target.src = '/placeholder.png')}
+          />
+        </div>
+        
+        <button
+          onClick={(e) => handleWishlistToggle(e)}
+          className="absolute top-3 right-3 z-20 p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110"
+          aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          {isInWishlist ? (
+            <FaHeart className="text-red-500 text-lg sm:text-xl" />
+          ) : (
+            <FaRegHeart className="text-gray-500 text-lg sm:text-xl hover:text-red-500" />
+          )}
+        </button>
       </div>
 
-      <div className="px-5 pb-5 flex flex-col items-center justify-center z-10">
-        <h3 className="text-sm sm:text-xl font-semibold text-black text-center cursor-pointer hover:underline">
-          {name}
-        </h3>
-        <span className="text-sm text-gray-600 mb-1">Size: {size}</span>
-        <span className="text-xl sm:text-3xl font-bold text-black mb-2">
-          ₹{rate}
-        </span>
+      {/* Product info */}
+      <div className="p-4 sm:p-5 flex flex-col flex-grow">
+        <div className="mb-2">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors">
+            {name}
+          </h3>
+          <span className="text-xs sm:text-sm text-gray-500">Size: {size}</span>
+        </div>
+        {rating && (
 
-        <button
-          onClick={handleAddToCart}
-          className="sm:w-[50%] text-white bg-black transform hover:scale-110 transition-all duration-300 font-medium rounded-4xl text-sm px-5 py-2.5 mt-3 shadow-md hover:shadow-lg"
-        >
-          Add to cart
-        </button>
+  <div className="flex items-center gap-1 mb-2">
+    {[...Array(5)].map((_, i) => (
+      <span key={i} className={`text-yellow-400 ${i < Math.round(rating) ? '' : 'opacity-30'}`}>
+      ★
+      </span>
+    ))}
+<span className="text-sm text-gray-600 ml-1">({rating})</span>
+</div>
+)}
+
+        <div className="mt-auto">
+          {discount_rate ? (
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xl sm:text-2xl font-bold text-red-600">
+                ₹{discount_rate}
+              </span>
+              <span className="text-sm sm:text-base line-through text-gray-400">
+                ₹{rate}
+              </span>
+              <span className="ml-2 text-xs sm:text-sm bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                {Math.round((1 - discount_rate/rate) * 100)}% OFF
+              </span>
+            </div>
+          ) : (
+            <span className="text-lg sm:text-xl font-bold text-gray-900 mb-3 block">
+              ₹{rate}
+            </span>
+          )}
+
+          <button
+            onClick={(e) => handleAddToCart(e)}
+            className="w-full text-white bg-gray-900 hover:bg-gray-800 transition-colors duration-300 font-medium rounded-lg text-sm px-4 py-2.5 text-center shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+          >
+            <FaShoppingCart className="text-sm" />
+            Add to cart
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -31,6 +31,7 @@ const AdminPage = () => {
     category: '',
     style: '',
     price: 0,
+    discounted_price: 0,
     image_url: '',
     description: '',
   });
@@ -234,6 +235,7 @@ const AdminPage = () => {
       category: '',
       style: '',
       price: 0,
+      discounted_price: 0,
       image_url: '',
       description: '',
     });
@@ -293,6 +295,7 @@ const AdminPage = () => {
       category: '',
       style: '',
       price: 0,
+      discounted_price: 0,
       image_url: '',
       description: '',
       
@@ -324,6 +327,7 @@ const AdminPage = () => {
       category: product.category || '',
       style: product.style || '',
       price: product.price,
+      discounted_price: product.discounted_price,
       description: product.description
     });
   };
@@ -507,6 +511,7 @@ const AdminPage = () => {
                     category: '',
                     style: '',
                     price: 0,
+                    discounted_price: 0,
                     image_url: '',
                     description: '',
                   });
@@ -589,6 +594,19 @@ const AdminPage = () => {
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                       />
                     </div>
+                    <div className="mb-4">
+                      <label htmlFor="discounted_price" className="block text-gray-700 text-sm font-bold mb-2">Discounted Price:</label>
+                      <input
+                        type="number"
+                        id="discounted_price"
+                        name="discounted_price"
+                        placeholder="Discounted Price"
+                        value={editedProductData.discounted_price || ''}
+                        onChange={handleProductInputChange}
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+
 
                     {/* Image URL */}
                     <div className="mb-4">
@@ -702,6 +720,7 @@ const AdminPage = () => {
                             category: '',
                             style: '',
                             price: 0,
+                            discounted_price: 0,
                             image_url: '',
                             description: '',
                           });

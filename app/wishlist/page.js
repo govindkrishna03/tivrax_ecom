@@ -116,8 +116,7 @@ export default function Wishlist() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
         <div className="w-full max-w-xl">
-          <h1 className="text-3xl font-semibold mb-2">My Wishlist</h1>
-          <p className="text-gray-600 mb-12">Start adding items to your wishlist</p>
+        
   
           <div className="flex flex-col items-center gap-6">
             <div className="bg-gray-100 rounded-full p-4">
