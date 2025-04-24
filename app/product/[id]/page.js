@@ -20,13 +20,14 @@ const ProductDescriptionPage = () => {
   const [currentUrl, setCurrentUrl] = useState("");
   const [user, setUser] = useState(null);
   const [quantity, setQuantity] = useState(1); // Added quantity state
+  const [rating, setRating] = useState(null);
+
 
   useEffect(() => {
     setCurrentUrl(window.location.href);
 
     const fetchProductData = async () => {
       try {
-        // Fetch product details
         const { data: productData, error: productError } = await supabase
           .from('products')
           .select('*')
@@ -36,7 +37,6 @@ const ProductDescriptionPage = () => {
         if (productError) throw productError;
         setProduct(productData);
 
-        // Fetch product sizes
         const { data: sizesData, error: sizesError } = await supabase
           .from('product_sizes')
           .select('*')
@@ -45,6 +45,7 @@ const ProductDescriptionPage = () => {
         if (sizesError) throw sizesError;
         setSizes(sizesData);
 
+        await fetchRating(); // 🟡 Call it here
       } catch (error) {
         console.error("Error fetching product data:", error);
         toast.error("Failed to load product data.");
@@ -55,6 +56,20 @@ const ProductDescriptionPage = () => {
 
     fetchProductData();
   }, [id]);
+
+  const fetchRating = async () => {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('rating')
+      .eq('product_id', id)
+      .is('rating', null, false);
+
+    if (!error && data.length > 0) {
+      const ratings = data.map(r => r.rating);
+      const avg = ratings.reduce((acc, val) => acc + val, 0) / ratings.length;
+      setRating(avg.toFixed(1));
+    }
+  };
 
   useEffect(() => {
     const getUser = async () => {
@@ -161,6 +176,16 @@ const ProductDescriptionPage = () => {
                 </button>
               </div>
             </div>
+            {rating && (
+              <div className="flex items-center mt-3 gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={`text-yellow-400 ${i < Math.round(rating) ? '' : 'opacity-30'}`}>
+                    ★
+                  </span>
+                ))}
+                <span className="text-sm text-gray-600 ml-1">({rating})</span>
+              </div>
+            )}
 
             {/* Price */}
             <div className="mt-6">
