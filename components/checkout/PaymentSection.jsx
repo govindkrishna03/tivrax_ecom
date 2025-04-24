@@ -70,52 +70,60 @@
       }
     };
     const handlePayByUPI = async () => {
-
       const upiId = process.env.NEXT_PUBLIC_UPI_ID;
       if (!upiId) {
         alert("UPI payment is not configured");
         return;
       }
-
-
+    
       if (!totalAmount || isNaN(totalAmount)) {
         alert("Invalid amount specified");
         return;
       }
-
+    
       const formattedAmount = Number(totalAmount).toFixed(2);
       const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
         "Tivrax"
       )}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(
         `Payment for order`
       )}`;
-
+    
       console.log("UPI URL:", upiUrl);
       setPaymentStatus("processing");
-
+    
       try {
-        if (navigator.share) {
-          await navigator.share({
-            title: "UPI Payment",
-            text: `Please pay ₹${formattedAmount} for your order`,
-            url: upiUrl,
-          });
-        } else if (/android/i.test(navigator.userAgent)) {
+        // For mobile devices
+        if (/android|iphone|ipad|ipod/i.test(navigator.userAgent)) {
+          // Try to open directly
           window.location.href = upiUrl;
-        } else {
-          window.open(upiUrl, "_blank");
+          
+          // Fallback: If not opened after timeout, show instructions
+          setTimeout(() => {
+            if (!document.hidden) {
+              setPaymentStatus("idle");
+              alert("Couldn't open UPI app automatically. Please copy this UPI ID: " + upiId);
+            }
+          }, 500);
+        } 
+        // For desktop
+        else {
+          // Try to open in new tab
+          const newWindow = window.open(upiUrl, "_blank");
+          
+          if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+            // If blocked, show UPI ID
+            setPaymentStatus("idle");
+            alert(`Please open your UPI app and send ₹${formattedAmount} to this UPI ID: ${upiId}`);
+          }
         }
-
+        
         setHasPaidByUPI(true);
         setPaymentStatus("success");
       } catch (error) {
         console.error("UPI payment error:", error);
-        if (error.name !== "AbortError") {
-          setPaymentStatus("failed");
-        }
+        setPaymentStatus("failed");
       }
     };
-
 
     return (
       <div className="space-y-8">
