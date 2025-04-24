@@ -26,7 +26,7 @@ export default function PaymentSection({
   isProcessing,
   formData,
   totalAmount: propTotalAmount, // Rename prop to avoid confusion
-  qrCodeUrl = "./gpay.jpeg", 
+  qrCodeUrl = "./gpay.jpeg",
 }) {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [hasPaidByUPI, setHasPaidByUPI] = useState(false);
@@ -37,7 +37,7 @@ export default function PaymentSection({
     if (typeof window !== 'undefined') {
       const queryParams = new URLSearchParams(window.location.search);
       const urlAmount = queryParams.get('price');
-      
+
       if (urlAmount) {
         setAmountFromUrl(parseFloat(urlAmount));
       }
@@ -51,7 +51,7 @@ export default function PaymentSection({
     setHasPaidByUPI(false);
     setPaymentStatus("idle");
   };
-  
+
 
   const handleConfirmPayment = async () => {
     if (!selectedMethod) {
@@ -70,28 +70,32 @@ export default function PaymentSection({
     }
   };
   const handlePayByUPI = async () => {
-  
+
     const upiId = process.env.NEXT_PUBLIC_UPI_ID;
     if (!upiId) {
       alert("UPI payment is not configured");
       return;
     }
-  
+    console.log("ENV:", process.env.NEXT_PUBLIC_UPI_ID);
+    console.log("Total Amount:", totalAmount);
+    console.log("Constructed UPI URL:", upiUrl);
+
+
     if (!totalAmount || isNaN(totalAmount)) {
       alert("Invalid amount specified");
       return;
     }
-  
+
     const formattedAmount = Number(totalAmount).toFixed(2);
     const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
       "Tivrax"
     )}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(
       `Payment for order`
     )}`;
-  
+
     console.log("UPI URL:", upiUrl);
     setPaymentStatus("processing");
-  
+
     try {
       if (navigator.share) {
         await navigator.share({
@@ -104,7 +108,7 @@ export default function PaymentSection({
       } else {
         window.open(upiUrl, "_blank");
       }
-  
+
       setHasPaidByUPI(true);
       setPaymentStatus("success");
     } catch (error) {
@@ -114,7 +118,7 @@ export default function PaymentSection({
       }
     }
   };
-  
+
 
   return (
     <div className="space-y-8">
@@ -133,19 +137,17 @@ export default function PaymentSection({
             <div
               key={method.id}
               onClick={() => handleSelectMethod(method.id)}
-              className={`relative rounded-lg border p-4 cursor-pointer transition-all ${
-                selectedMethod === method.id
+              className={`relative rounded-lg border p-4 cursor-pointer transition-all ${selectedMethod === method.id
                   ? "border-blue-500 bg-blue-50"
                   : "border-gray-200 hover:border-gray-300"
-              }`}
+                }`}
             >
               <div className="flex items-center">
                 <div
-                  className={`text-xl mr-3 ${
-                    selectedMethod === method.id
+                  className={`text-xl mr-3 ${selectedMethod === method.id
                       ? "text-blue-500"
                       : "text-gray-400"
-                  }`}
+                    }`}
                 >
                   {method.icon}
                 </div>
@@ -155,11 +157,10 @@ export default function PaymentSection({
                 </div>
                 <div className="ml-2">
                   <div
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                      selectedMethod === method.id
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedMethod === method.id
                         ? "border-blue-500"
                         : "border-gray-300"
-                    }`}
+                      }`}
                   >
                     {selectedMethod === method.id && (
                       <div className="w-3 h-3 rounded-full bg-blue-500" />
@@ -198,11 +199,10 @@ export default function PaymentSection({
             whileTap={{ scale: 0.97 }}
             onClick={handleConfirmPayment}
             disabled={paymentStatus === "processing"}
-            className={`w-full py-3 px-4 rounded-lg text-white font-medium mt-6 ${
-              paymentStatus === "processing"
+            className={`w-full py-3 px-4 rounded-lg text-white font-medium mt-6 ${paymentStatus === "processing"
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-green-600 hover:bg-green-700"
-            }`}
+              }`}
           >
             {paymentStatus === "processing" ? (
               <span className="flex items-center justify-center">
