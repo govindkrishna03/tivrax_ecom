@@ -72,7 +72,7 @@ export default function Navbar() {
 
   return (
     <nav className="flex sm:justify-between items-center sm:px-10 bg-white sticky top-0 z-50 py-2">
-      <Link href="/">
+      <Link href="/" >
         <Image
           src="/logo.png"
           alt="Tivrax Logo"
@@ -82,17 +82,16 @@ export default function Navbar() {
           priority
         />
       </Link>
-
       <div className="relative flex flex-row gap-8 sm:gap-20 px-10 sm:px-20 items-center">
-        <Link href="/search">
+        <Link href="/search" >
           <Image src="/icons/search.png" alt="Search" width={30} height={30} className="object-contain hover:scale-110 transition-transform duration-200" />
         </Link>
 
-        <Link href="/shopping_cart">
+        <Link href="/shopping_cart" >
           <Image src="/icons/cart.png" alt="Cart" width={30} height={30} className="object-contain hover:scale-110 transition-transform duration-200" />
         </Link>
 
-        <Link href="/wishlist">
+        <Link href="/wishlist" >
           <Image src="/icons/wishlist.png" alt="Wishlist" width={30} height={30} className="object-contain hover:scale-110 transition-transform duration-200" />
         </Link>
 
@@ -152,7 +151,6 @@ export default function Navbar() {
 
 
       </div>
-
       {/* Toast Notification */}
       {showLoginMessage && (
         <div className="fixed bottom-5 right-5 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in-out">

@@ -97,12 +97,11 @@ export default function SearchPage() {
           autoFocus
         />
       </div>
-
       {query && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filtered.length > 0 ? (
             filtered.map((product) => (
-              <Link key={product.id} href={`/product/${product.id}`} passHref>
+              <Link key={product.id} href={`/product/${product.id}`} passHref legacyBehavior>
                 <div className="bg-white rounded-xl shadow hover:shadow-lg transition-shadow p-4 flex flex-col items-center text-center cursor-pointer">
                   <img
                     src={product.image_url || '/placeholder.png'}

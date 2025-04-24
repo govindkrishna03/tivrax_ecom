@@ -31,7 +31,6 @@ export default function StylePage() {
       <h2 className="text-2xl font-bold mb-6 capitalize">
         {category} / {style.replace(/-/g, ' ')}
       </h2>
-
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.length > 0 ? (
           products.map((product) => (

@@ -195,7 +195,7 @@ const ProductDescriptionPage = () => {
                   : "bg-gray-300 text-gray-600 cursor-not-allowed"
                 }`}
             >
-              Buy Now ({quantity})
+              Buy Now
             </button>
           </div>
         </div>

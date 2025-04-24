@@ -20,7 +20,7 @@ const socialPlatforms = [
   },
   {
     name: "WhatsApp",
-    url: "https://wa.me/1234567890?text=Hello%20I%20have%20a%20question",
+    url: "https://wa.me/7418396243?text=Hello%20I%20have%20a%20question",
     icon: <FaWhatsapp size={20} />,
     color: "bg-green-500",
     hoverColor: "hover:shadow-lg hover:shadow-green-500/30"
