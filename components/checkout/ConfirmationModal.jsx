@@ -175,7 +175,7 @@ export default function ConfirmationModal({
               >
                 {paymentMethod === "cod" 
                   ? "Thank you for your purchase!" 
-                  : "Please complete payment in the next step"}
+                  : "Order will be updated once payment is confirmed."}
               </motion.p>
               
               <motion.div 
