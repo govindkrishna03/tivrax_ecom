@@ -5,6 +5,7 @@ import Link from "next/link";
 import ProductCard from "../../components/Productcard"; 
 import { getProductData } from '../../lib/getProductData'; 
 import Loading from "../../components/Loading"; 
+import toast from "react-hot-toast";
 
 export default function Wishlist() {
   const [wishlistItems, setWishlistItems] = useState([]);
@@ -155,8 +156,8 @@ export default function Wishlist() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.map((product) => (
           <div key={product.id} className="relative group">
-            <Link href={`/product/${product.id}`} passHref legacyBehavior>
-              <a className="block">
+            <Link href={`/product/${product.id}`}  >
+              
                 <ProductCard
                   id={product.id}
                   name={product.name}
@@ -164,7 +165,6 @@ export default function Wishlist() {
                   rate={product.price}
                   image={product.image_url || '/placeholder.png'}
                 />
-              </a>
             </Link>
             <button
               onClick={(e) => {

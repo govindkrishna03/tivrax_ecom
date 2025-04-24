@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from './../lib/supabase';
 import { FaHeart, FaRegHeart, FaShoppingCart } from "react-icons/fa";
-
+import toast from "react-hot-toast";
 const ProductCard = ({ id, name, rate, discount_rate, size, image, rating }) => {
   const [cartItems, setCartItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
@@ -78,21 +78,23 @@ const ProductCard = ({ id, name, rate, discount_rate, size, image, rating }) => 
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
-
+  
     if (!userId) {
-      alert('Please login to add items to cart');
+      toast.error('Please login to add items to cart');
       return;
     }
-
+  
     const isAlreadyInCart = cartItems.some(
       item => item.product_id === id && item.size === size
     );
-
+  
     if (isAlreadyInCart) {
-      showNotification(`${name} (Size ${size}) is already in your cart`);
+      toast('Already in your cart!', {
+        icon: '🛒',
+      });
       return;
     }
-
+  
     const { error } = await supabase.from('cart').insert([
       {
         user_id: userId,
@@ -101,16 +103,16 @@ const ProductCard = ({ id, name, rate, discount_rate, size, image, rating }) => 
         quantity: 1,
       }
     ]);
-
+  
     if (!error) {
       fetchCartItems();
-      showNotification(`${name} (Size ${size}) added to cart successfully!`);
+      toast.success(`${name} added to cart!`);
     } else {
+      toast.error('Failed to add to cart');
       console.error('Error adding to cart:', error.message);
     }
   };
-
-
+  
 
   const handleWishlistToggle = async (e) => {
     e.stopPropagation();
