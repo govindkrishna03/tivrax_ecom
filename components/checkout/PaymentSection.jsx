@@ -70,51 +70,51 @@ export default function PaymentSection({
     }
   };
   const handlePayByUPI = async () => {
+  
     const upiId = process.env.NEXT_PUBLIC_UPI_ID;
     if (!upiId) {
       alert("UPI payment is not configured");
       return;
     }
-
+  
     if (!totalAmount || isNaN(totalAmount)) {
       alert("Invalid amount specified");
       return;
     }
   
     const formattedAmount = Number(totalAmount).toFixed(2);
-    
-    // Create UPI URL with all required parameters
-    const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent("Your Business Name")}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(`Payment for order`)}`;
-
+    const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
+      "Tivrax"
+    )}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(
+      `Payment for order`
+    )}`;
+  
+    console.log("UPI URL:", upiUrl);
     setPaymentStatus("processing");
+  
     try {
-      // For mobile devices that support sharing
       if (navigator.share) {
         await navigator.share({
           title: "UPI Payment",
           text: `Please pay ₹${formattedAmount} for your order`,
           url: upiUrl,
         });
-      } 
-      // For desktop or devices without share API
-      else if (navigator.userAgent.match(/android/i)) {
-        // Android devices can directly open UPI links
+      } else if (/android/i.test(navigator.userAgent)) {
         window.location.href = upiUrl;
       } else {
-        // Fallback for other devices - open in new tab
         window.open(upiUrl, "_blank");
       }
-      
+  
       setHasPaidByUPI(true);
       setPaymentStatus("success");
     } catch (error) {
       console.error("UPI payment error:", error);
-      // If sharing was cancelled, don't treat as error
-      if (error.name !== 'AbortError') {
+      if (error.name !== "AbortError") {
         setPaymentStatus("failed");
       }
     }
   };
+  
 
   return (
     <div className="space-y-8">
