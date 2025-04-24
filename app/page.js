@@ -1,5 +1,4 @@
 export const dynamic = 'force-dynamic';
-
 import HeroCarousel from "../components/Carousel";
 import ProductCard from "../components/Productcard";
 import CategoryDropdown from "../components/CategoryDropdown";

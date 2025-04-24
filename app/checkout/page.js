@@ -45,7 +45,6 @@ export default function CheckoutPage() {
   
  
 
-  // For demonstration, assuming a single product is passed for simplicity.
   const totalPrice = useMemo(() => {
     return checkoutProducts.reduce(
       (sum, product) =>
