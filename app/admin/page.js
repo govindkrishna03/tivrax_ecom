@@ -17,7 +17,19 @@ const productCategories = {
   'Shorts': ['Casual', 'Athletic', 'Denim', 'Cargo', 'Swim'],
   'Jackets': ['Denim', 'Bomber', 'Parka', 'Leather', 'Windbreaker']
 };
-
+// Add this near the top of your component, with other utility functions
+const formatDateToIST = (dateString) => {
+  return new Date(dateString).toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+};
 const AdminPage = () => {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
@@ -53,9 +65,10 @@ const AdminPage = () => {
       setEditedProductData(prev => ({ ...prev, style: '' }));
     }
   }, [editedProductData.category]);
-  
+
   const handleDownloadBillPDF = async (order) => {
     try {
+      
       const {
         id,
         name,
@@ -71,25 +84,25 @@ const AdminPage = () => {
         phone_number,
         product_size,
       } = order;
-  
-      const formattedDate = new Date(created_at).toLocaleString();
+
+      const formattedDate = formatDateToIST(order.created_at);
       const doc = new jsPDF();
-  
+
       // Header with Brand Name
       doc.setFontSize(20);
       doc.setTextColor(40, 40, 40);
       doc.text("Tivrax Clothing", 14, 20);
-  
+
       doc.setFontSize(12);
       doc.setTextColor(100);
       doc.text("Thank you for your purchase!", 14, 28);
       doc.text("This bill is for your shipping and order summary.", 14, 34);
-  
+
       // Optional Logo (uncomment and set image src)
       // const img = new Image();
       // img.src = "/path-to-logo.png";
       // doc.addImage(img, "PNG", 150, 10, 40, 15);
-  
+
       // Customer Info
       const customerInfo = [
         ["Invoice ID:", id],
@@ -98,13 +111,13 @@ const AdminPage = () => {
         ["Email:", email],
         ["Phone:", phone_number],
       ];
-  
+
       doc.setFontSize(11);
       doc.setTextColor(50);
       customerInfo.forEach(([label, value], i) => {
         doc.text(`${label} ${value}`, 14, 45 + i * 6);
       });
-  
+
       // Product Details Table
       autoTable(doc, {
         startY: 80,
@@ -131,7 +144,7 @@ const AdminPage = () => {
           cellPadding: 3,
         },
       });
-  
+
       // Shipping Address
       doc.setFontSize(12);
       doc.setTextColor(40);
@@ -139,14 +152,14 @@ const AdminPage = () => {
       doc.setFontSize(10);
       doc.setTextColor(80);
       doc.text(shipping_address, 14, doc.lastAutoTable.finalY + 16, { maxWidth: 180 });
-  
+
       // Footer
       doc.setFontSize(10);
       doc.setTextColor(130);
       doc.text("If you have any questions, reach out to us on Instagram or WhatsApp.", 14, doc.internal.pageSize.height - 25);
       doc.setTextColor(100);
       doc.text("Tivrax Clothing © 2025", 14, doc.internal.pageSize.height - 15);
-  
+
       const filename = `Tivrax_Invoice_${id}.pdf`;
       doc.save(filename);
     } catch (error) {
@@ -298,7 +311,7 @@ const AdminPage = () => {
       discounted_price: 0,
       image_url: '',
       description: '',
-      
+
     });
     setNewProductSizes([{ size: availableSizes[0], stock: 0 }]); // Reset sizes
     fetchProducts(); // Refresh the product list
@@ -447,7 +460,7 @@ const AdminPage = () => {
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Phone Number</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Action</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Bill</th>
-                    
+
 
                     </tr>
                   </thead>
@@ -465,6 +478,9 @@ const AdminPage = () => {
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.payment_mode}</td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.shipping_address}</td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.order_status}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700 border-b">
+                          {formatDateToIST(order.created_at)}
+                        </td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">{order.phone_number}</td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">
                           <div className="flex gap-2">
@@ -483,13 +499,13 @@ const AdminPage = () => {
                           </div>
                         </td>
                         <td className="px-4 py-2 text-sm text-gray-700 border-b">
-                        <button
-    onClick={() => handleDownloadBillPDF(order)} // Use the new function
-    className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-  >
-    Download PDF Bill
-  </button>
-                      </td>
+                          <button
+                            onClick={() => handleDownloadBillPDF(order)} // Use the new function
+                            className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                          >
+                            Download PDF Bill
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

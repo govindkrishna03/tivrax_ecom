@@ -114,8 +114,9 @@ export default function CheckoutPage() {
           email: formData.email,
           order_status: "Pending",
           payment_mode: method,
-          created_at: istNow.toISOString(),
-          updated_at: istNow.toISOString(),
+          created_at: istNow.toLocaleString("en-GB", { timeZone: "Asia/Kolkata" }),
+          updated_at: istNow.toLocaleString("en-GB", { timeZone: "Asia/Kolkata" }),
+          
         }))
       )
       .select();

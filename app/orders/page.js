@@ -93,6 +93,17 @@ export default function Orders() {
     } catch (err) {
       console.error("Error submitting rating:", err);
     }
+  }; const formatDateToIST = (dateString) => {
+    return new Date(dateString).toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true
+    });
   };
 
   if (loading) return <Loading />;
@@ -116,31 +127,27 @@ export default function Orders() {
         ) : (
           <div className="space-y-8">
             {orders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-white border border-gray-200 rounded-xl p-6 shadow hover:shadow-md transition"
-              >
+              <div key={order.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow hover:shadow-md transition">
                 <div className="flex justify-between items-center mb-2">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-700">
                       Order #{order.id}
                     </h3>
-                    <p className="text-xs text-gray-500">
-                      Placed on{" "}
-                      {new Date(order.created_at).toLocaleString("en-IN", {
-                        timeZone: "Asia/Kolkata",
-                      })}
-                    </p>
+                    {order.updated_at && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Order Placed at: {formatDateToIST(order.updated_at)}
+                      </p>
+                    )}
                   </div>
 
+
                   <span
-                    className={`text-sm font-medium px-3 py-1 rounded-full ${
-                      order.order_status === "Success"
+                    className={`text-sm font-medium px-3 py-1 rounded-full ${order.order_status === "Success"
                         ? "bg-green-100 text-green-700"
                         : order.order_status === "Failed"
-                        ? "bg-red-100 text-red-600"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
+                          ? "bg-red-100 text-red-600"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
                   >
                     {order.order_status}
                   </span>
@@ -196,11 +203,10 @@ export default function Orders() {
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
-                          className={`text-xl ${
-                            (hoveredStars[order.id] || submittedRatings[order.id]) >= star
+                          className={`text-xl ${(hoveredStars[order.id] || submittedRatings[order.id]) >= star
                               ? "text-yellow-500"
                               : "text-gray-300"
-                          }`}
+                            }`}
                           onMouseEnter={() =>
                             setHoveredStars((prev) => ({
                               ...prev,
