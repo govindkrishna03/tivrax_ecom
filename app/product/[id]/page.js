@@ -19,9 +19,8 @@ const ProductDescriptionPage = () => {
   const [selectedSize, setSelectedSize] = useState(null);
   const [currentUrl, setCurrentUrl] = useState("");
   const [user, setUser] = useState(null);
-  const [quantity, setQuantity] = useState(1); // Added quantity state
+  const [quantity, setQuantity] = useState(1);
   const [rating, setRating] = useState(null);
-
 
   useEffect(() => {
     setCurrentUrl(window.location.href);
@@ -45,7 +44,25 @@ const ProductDescriptionPage = () => {
         if (sizesError) throw sizesError;
         setSizes(sizesData);
 
-        await fetchRating(); // 🟡 Call it here
+        // Fetch rating after product data is loaded
+        const { data: ratingData, error: ratingError } = await supabase
+          .from('orders')
+          .select('rating')
+          .eq('product_id', id)
+          .not('rating', 'is', null);
+
+        if (ratingError) throw ratingError;
+
+        if (ratingData && ratingData.length > 0) {
+          const validRatings = ratingData
+            .map(r => r.rating)
+            .filter(r => r !== null && !isNaN(r));
+          
+          if (validRatings.length > 0) {
+            const avg = validRatings.reduce((acc, val) => acc + val, 0) / validRatings.length;
+            setRating(avg.toFixed(1));
+          }
+        }
       } catch (error) {
         console.error("Error fetching product data:", error);
         toast.error("Failed to load product data.");
@@ -58,19 +75,37 @@ const ProductDescriptionPage = () => {
   }, [id]);
 
   const fetchRating = async () => {
+    console.log("fetchRating called with ID:", id);
+  
+    if (!id || id === "null") {
+      console.warn("Invalid product ID passed to fetchRating");
+      setRating(null);
+      return;
+    }
+  
     const { data, error } = await supabase
       .from('orders')
       .select('rating')
       .eq('product_id', id)
-      .is('rating', null, false);
-
-    if (!error && data.length > 0) {
-      const ratings = data.map(r => r.rating);
-      const avg = ratings.reduce((acc, val) => acc + val, 0) / ratings.length;
-      setRating(avg.toFixed(1));
+      .neq('rating', null); // ✅ fix here
+  
+    if (error) {
+      console.error("Error fetching ratings:", error);
+      setRating(null);
+      return;
     }
+  
+    const ratings = data.map(r => Number(r.rating)).filter(r => !isNaN(r));
+    if (ratings.length === 0) {
+      setRating(null);
+      return;
+    }
+  
+    const avg = ratings.reduce((acc, val) => acc + val, 0) / ratings.length;
+    setRating(avg.toFixed(1));
   };
-
+  
+  
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -105,11 +140,11 @@ const ProductDescriptionPage = () => {
   };
 
   const increaseQuantity = () => {
-    setQuantity(prev => Math.min(prev + 1, 10)); // Limit to 10
+    setQuantity(prev => Math.min(prev + 1, 10));
   };
 
   const decreaseQuantity = () => {
-    setQuantity(prev => Math.max(prev - 1, 1)); // Don't go below 1
+    setQuantity(prev => Math.max(prev - 1, 1));
   };
 
   if (loading) return <Loading />;
@@ -118,7 +153,6 @@ const ProductDescriptionPage = () => {
   return (
     <div className="container mx-auto px-6 py-12">
       <div className="flex flex-col lg:flex-row bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-200">
-        {/* Product Image */}
         <div className="lg:w-1/2 w-full p-8 bg-gray-50 flex items-center justify-center">
           <img
             src={product.image_url}
@@ -127,13 +161,11 @@ const ProductDescriptionPage = () => {
           />
         </div>
 
-        {/* Product Details */}
         <div className="lg:w-1/2 w-full p-8 flex flex-col justify-between">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
             <p className="text-gray-500 text-lg mt-2">{product.category}</p>
 
-            {/* Size Selection */}
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2 text-gray-700">Select Size</h3>
               <div className="flex gap-4 flex-wrap">
@@ -153,7 +185,6 @@ const ProductDescriptionPage = () => {
               </div>
             </div>
 
-            {/* Quantity Selector */}
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2 text-gray-700">Quantity</h3>
               <div className="flex items-center gap-4">
@@ -161,7 +192,6 @@ const ProductDescriptionPage = () => {
                   onClick={decreaseQuantity}
                   disabled={quantity <= 1}
                   className={`p-2 rounded-full ${quantity <= 1 ? 'bg-gray-200 text-gray-400' : 'bg-gray-200 hover:bg-gray-300'} transition-colors`}
-                  aria-label="Decrease quantity"
                 >
                   <FaMinus />
                 </button>
@@ -170,24 +200,27 @@ const ProductDescriptionPage = () => {
                   onClick={increaseQuantity}
                   disabled={quantity >= 10}
                   className={`p-2 rounded-full ${quantity >= 10 ? 'bg-gray-200 text-gray-400' : 'bg-gray-200 hover:bg-gray-300'} transition-colors`}
-                  aria-label="Increase quantity"
                 >
                   <FaPlus />
                 </button>
               </div>
             </div>
-            {rating && (
-              <div className="flex items-center mt-3 gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className={`text-yellow-400 ${i < Math.round(rating) ? '' : 'opacity-30'}`}>
-                    ★
-                  </span>
-                ))}
-                <span className="text-sm text-gray-600 ml-1">({rating})</span>
-              </div>
-            )}
 
-            {/* Price */}
+            <div className="mt-3">
+              {rating ? (
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className={`text-yellow-400 ${i < Math.round(rating) ? '' : 'opacity-30'}`}>
+                      ★
+                    </span>
+                  ))}
+                  <span className="text-sm text-gray-600 ml-1">({rating})</span>
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm italic">Not yet rated</p>
+              )}
+            </div>
+
             <div className="mt-6">
               {product.discounted_price ? (
                 <div className="flex items-center gap-3 mb-1">
@@ -213,14 +246,12 @@ const ProductDescriptionPage = () => {
               )}
             </div>
 
-            {/* Description */}
             <div className="mt-6">
               <h4 className="text-md font-semibold mb-1 text-gray-700">Product Description</h4>
               <p className="text-gray-600 leading-relaxed">{product.description}</p>
             </div>
           </div>
 
-          {/* Buy Now Button */}
           <div className="mt-10">
             {!user && (
               <div className="mt-8 text-center text-red-600 font-medium text-lg">
