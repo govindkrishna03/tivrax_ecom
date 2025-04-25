@@ -13,7 +13,7 @@ import { FaWhatsapp } from "react-icons/fa";
 const socialPlatforms = [
   {
     name: "Instagram",
-    url: "https://www.instagram.com",
+    url: "https://www.instagram.com/tivrax_fashion/?utm_source=ig_web_button_share_sheet",
     icon: <Instagram size={20} />,
     color: "bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400",
     hoverColor: "hover:shadow-lg hover:shadow-pink-500/30"
@@ -27,7 +27,7 @@ const socialPlatforms = [
   },
   {
     name: "Facebook",
-    url: "https://www.facebook.com",
+    url: "https://www.facebook.com/share/16N7eEspgB/",
     icon: <Facebook size={20} />,
     color: "bg-blue-600",
     hoverColor: "hover:shadow-lg hover:shadow-blue-600/30"
@@ -39,13 +39,13 @@ const socialPlatforms = [
   //   color: "bg-red-600",
   //   hoverColor: "hover:shadow-lg hover:shadow-red-600/30"
   // },
-  {
-    name: "LinkedIn",
-    url: "https://www.linkedin.com",
-    icon: <Linkedin size={20} />,
-    color: "bg-blue-700",
-    hoverColor: "hover:shadow-lg hover:shadow-blue-700/30"
-  }
+  // {
+  //   name: "LinkedIn",
+  //   url: "https://www.linkedin.com",
+  //   icon: <Linkedin size={20} />,
+  //   color: "bg-blue-700",
+  //   hoverColor: "hover:shadow-lg hover:shadow-blue-700/30"
+  // }
 ];
 
 export function FooterSocial() {
