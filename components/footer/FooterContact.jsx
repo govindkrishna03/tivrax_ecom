@@ -44,7 +44,21 @@ export function FooterContact() {
         </div>
  
       </div>
-
+      <div className="pt-4">
+        <div className="relative h-40 w-full overflow-hidden rounded-lg">
+          <iframe 
+           src="https://maps.google.com/maps?q=12.35651683807373,80.00938415527344&z=17&output=embed"
+            width="100%" 
+            height="100%" 
+            style={{ border: 0 }} 
+            allowFullScreen={false} 
+            loading="lazy" 
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Tivrax Store Location"
+            className="grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-500"
+          />
+        </div>
+      </div>
     </div>
   );
 }
