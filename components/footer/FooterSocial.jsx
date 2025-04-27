@@ -1,20 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { 
-  Facebook, 
-  Instagram, 
-  Linkedin, 
-  Twitter, 
-  Youtube, // This is the correct import for WhatsApp icon in lucide-react
+import {
+  Facebook, Instagram,
 } from "lucide-react";
-import { FaWhatsapp } from "react-icons/fa";
+import { FaWhatsapp, FaFacebook, FaInstagram, FaMapMarkedAlt } from "react-icons/fa";
 
 const socialPlatforms = [
   {
     name: "Instagram",
     url: "https://www.instagram.com/tivrax_fashion/?utm_source=ig_web_button_share_sheet",
-    icon: <Instagram size={20} />,
+    icon: <FaInstagram size={20} />,
     color: "bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400",
     hoverColor: "hover:shadow-lg hover:shadow-pink-500/30"
   },
@@ -28,7 +24,14 @@ const socialPlatforms = [
   {
     name: "Facebook",
     url: "https://www.facebook.com/share/16N7eEspgB/",
-    icon: <Facebook size={20} />,
+    icon: <FaFacebook size={20} />,
+    color: "bg-blue-600",
+    hoverColor: "hover:shadow-lg hover:shadow-blue-600/30"
+  },
+  {
+    name: "Google Maps",
+    url: "https://maps.google.com/?q=12.35651683807373,80.00938415527344&z=17",
+    icon: <FaMapMarkedAlt size={20} />,
     color: "bg-blue-600",
     hoverColor: "hover:shadow-lg hover:shadow-blue-600/30"
   },
@@ -52,11 +55,11 @@ export function FooterSocial() {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-4 text-white">Connect With Us</h3>
-      
+
       <p className="text-sm text-gray-300 mb-6 max-w-md">
         Join our community for the latest updates, exclusive content, and special offers.
       </p>
-      
+
       <div className="flex flex-wrap gap-4">
         {socialPlatforms.map((platform, index) => (
           <motion.a
@@ -68,7 +71,7 @@ export function FooterSocial() {
             className="relative group"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ 
+            transition={{
               delay: index * 0.1,
               type: "spring",
               stiffness: 100
@@ -83,7 +86,7 @@ export function FooterSocial() {
             `}>
               {platform.icon}
             </div>
-            <motion.span 
+            <motion.span
               className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 
                         text-xs font-medium text-white opacity-0 
                         group-hover:opacity-100 whitespace-nowrap
