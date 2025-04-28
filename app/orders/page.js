@@ -93,7 +93,8 @@ export default function Orders() {
     } catch (err) {
       console.error("Error submitting rating:", err);
     }
-  }; const formatDateToIST = (dateString) => {
+  };
+   const formatDateToIST = (dateString) => {
     return new Date(dateString).toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
       day: "2-digit",
